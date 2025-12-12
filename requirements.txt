@@ -1,0 +1,5 @@
+requests
+psutil
+scapy
+fastapi
+uvicorn

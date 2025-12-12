@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  sb-agent:
+    build: .
+    container_name: sb-agent-service
+    
+    # IMPORTANTE 1: Permisos y Red
+    # Necesario para que scapy pueda sniffear (IDS) y para que shutdown/update funcionen.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_ADMIN
+    
+    # Opcional pero recomendado para máxima compatibilidad con comandos de sistema:
+    # privileged: true 
+    
+    # IMPORTANTE 2: Networking
+    # Usamos host networking para simplificar el escaneo y que la IP del agente 
+    # dentro del contenedor sea la IP real de la máquina (más fácil de gestionar).
+    # OJO: Esto solo funciona en Linux. Si usas Windows/Mac, omite esta línea.
+    network_mode: host 
+    
+    # Si no usas network_mode: host, descomenta esto para mapear el puerto
+    # ports:
+    #   - "9876:9876"
+      
+    # IMPORTANTE 3: Persistencia de datos
+    # Mantenemos el AGENT_ID persistente en el host.
+    volumes:
+      - agent_data:/sb-agent/data
+      - /etc/localtime:/etc/localtime:ro # Para que los logs tengan la hora correcta
+
+volumes:
+  agent_data:

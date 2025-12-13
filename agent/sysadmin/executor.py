@@ -3,21 +3,26 @@ import subprocess
 import shlex
 
 # ----------- POWER MANAGEMENT -------------
+# Contenido de sysadmin/executor.py
+import os
+# ... (otras funciones)
+
+# ----------- POWER MANAGEMENT -------------
 def shutdown(args=None):
-    print("[EXECUTOR] Shutting down system using os.system('/sbin/poweroff')...")
+    print("[EXECUTOR] Shutting down system using os.system('/usr/bin/systemctl poweroff &')...")
     
-    # Usamos la ruta absoluta del binario 'poweroff' para máxima compatibilidad
-    os.system("/sbin/shutdown -h now &") # Usando el comando shutdown en lugar de poweroff
+    # 🚨 Comando final y más robusto para apagar systemd en segundo plano.
+    # Usamos la ruta absoluta de systemctl.
+    os.system("/usr/bin/systemctl poweroff &") 
     
-    return True
+    return True 
+# ...
 
 # ----------- SYSTEM UPDATES ----------------
 def update_system(args=None):
     try:
-        # shell=True es necesario para && o wildcards, pero aquí son comandos fijos
-        # Dividimos en dos llamadas para evitar shell=True si es posible, 
-        # o usamos && con shell=True pero SIN variables externas.
-        cmd = "sudo apt update -y && sudo apt upgrade -y"
+        # 🚨 Eliminado 'sudo' porque el servicio ya corre como root
+        cmd = "apt update -y && apt upgrade -y"
         subprocess.run(cmd, shell=True, check=True)
         print("[EXECUTOR] Update completed")
     except subprocess.CalledProcessError as e:

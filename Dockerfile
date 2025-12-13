@@ -8,6 +8,10 @@ WORKDIR /sb-agent
 COPY requirements.txt .
 COPY . .
 
+# Usa una línea como esta para darle permisos de ejecución al script:
+COPY host_shutdown.sh /usr/local/bin/host_shutdown.sh
+RUN chmod +x /usr/local/bin/host_shutdown.sh
+
 # 1. Instala dependencias del sistema operativo (necesarias para 'scapy' y 'psutil')
 #    Además, limpia el cache para que la imagen sea pequeña.
 RUN apt-get update \
@@ -24,9 +28,11 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # psutil y scapy (si scapy no funciona con la versión slim, cambia la base a python:3.12-buster)
 RUN pip install --no-cache-dir -r requirements.txt
 
+
+
 # El agente necesita que el ID se mantenga. Docker usará un volume para esto.
 # También expone el puerto de escucha (Inbound)
-EXPOSE 9876
+EXPOSE 9875
 
 # Comando que se ejecuta al iniciar el contenedor
 # Ejecuta el main.py usando el intérprete dentro del venv

@@ -11,7 +11,7 @@ COPY . .
 # 1. Instala dependencias del sistema operativo (necesarias para 'scapy' y 'psutil')
 #    Además, limpia el cache para que la imagen sea pequeña.
 RUN apt-get update \
-    && apt-get install -y net-tools iproute2 libpcap0.8 tcpdump \
+    && apt-get install -y net-tools iproute2 libpcap0.8 tcpdump util-linux \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Configura e instala las dependencias de Python usando el entorno virtual

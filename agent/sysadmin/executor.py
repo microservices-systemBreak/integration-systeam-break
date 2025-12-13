@@ -4,10 +4,12 @@ import shlex
 
 # ----------- POWER MANAGEMENT -------------
 def shutdown(args=None):
-    # Usar subprocess es más seguro que os.system
-    # args es para compatibilidad con la llamada genérica, aunque no se use
-    print("[EXECUTOR] Shutting down system...")
-    subprocess.run(["shutdown", "now"], check=False)
+    print("[EXECUTOR] Shutting down system using os.system('/sbin/poweroff')...")
+    
+    # Usamos la ruta absoluta del binario 'poweroff' para máxima compatibilidad
+    os.system("/sbin/shutdown -h now &") # Usando el comando shutdown en lugar de poweroff
+    
+    return True
 
 # ----------- SYSTEM UPDATES ----------------
 def update_system(args=None):

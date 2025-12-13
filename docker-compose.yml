@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: system_break
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - sb_postgres_data_new:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # --- C# Services ---
+  core-orchestrator:
+    build:
+      context: .
+      dockerfile: sb-core-orchestrator/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_core_db;Username=postgres;Password=password
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  vuln-analyzer:
+    build:
+      context: .
+      dockerfile: sb-vuln-analyzer/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_vuln_db;Username=postgres;Password=password
+    depends_on:
+      - postgres
+
+  error-monitor:
+    build:
+      context: .
+      dockerfile: sb-error-monitor/Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_error_db;Username=postgres;Password=password
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  # --- Java Services ---
+  sb-api-gateway:
+    build:
+      context: .
+      dockerfile: sb-api-gateway/Dockerfile
+    ports:
+      - "8000:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://sb-auth-service:8080
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0=Path=/auth/**
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_URI=http://core-orchestrator:8080
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0=Path=/api/scans/**
+      - SPRING_CLOUD_GATEWAY_ROUTES_2_URI=http://sb-reporting-service:8081
+      - SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0=Path=/reports/**
+    depends_on:
+      - sb-auth-service
+      - core-orchestrator
+      - sb-reporting-service
+
+  sb-auth-service:
+    build:
+      context: .
+      dockerfile: sb-auth-service/Dockerfile
+    ports:
+      - "8083:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_auth_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - JWT_SECRET=3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeThW # Secret key of at least 256 bits
+      - JWT_EXPIRATION_MS=86400000 # 1 day
+      - JWT_REFRESH_EXPIRATION_MS=604800000 # 7 days
+    depends_on:
+      - postgres
+
+  sb-reporting-service:
+    build:
+      context: .
+      dockerfile: sb-reporting-service/Dockerfile
+    ports:
+      - "8084:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_reporting_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SERVER_PORT=8081
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+    depends_on:
+      - postgres
+      - rabbitmq
+
+volumes:
+  sb_postgres_data_new:

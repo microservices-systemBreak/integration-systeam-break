@@ -1,0 +1,31 @@
+server:
+  port: 8080 # El gateway correrá en el puerto 8080
+
+spring:
+  application:
+    name: sb-api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Regla para enrutar al servicio de reportes
+        - id: reporting-service-route
+          uri: http://localhost:8081 # La URL donde corre tu sb-reporting-service
+          predicates:
+            - Path=/reports/** # Cualquier petición que empiece con /reports/...
+
+        # Aquí añadiremos las reglas para /auth/** y /core/** más adelante
+        - id: auth-service-route
+          uri: http://localhost:8082 # Suponiendo que el servicio de autenticación corre en el puerto 8082
+          predicates:
+            - Path=/auth/**
+        
+        - id: core-service-route
+          uri: http://localhost:5000 # Suponiendo que el servicio C# corre en el puerto 5000
+          predicates:
+            - Path=/core/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

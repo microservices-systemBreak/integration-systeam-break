@@ -106,46 +106,83 @@ El Agente expone una API REST para la comunicación con el `sb-core-orchestrator
 | **III. Gestión del Sistema** | `POST`| `/sysadmin/update` | **Actualización:** Ejecuta `apt update -y && apt upgrade -y`. | Ninguno |
 | **IV. Control Multimedia**| `POST`| `/sysadmin/multimedia/video` | **Mostrar Video:** Abre un archivo de video en la sesión gráfica activa. | `{ "path": "ruta/local" }` |
 
-### I. Obtener Estado y MAC (WOL)
 
-**Ruta:** `GET http://<AGENT_IP>:9875/agent/status`
 
-**Respuesta de Ejemplo:**
+-----
+
+## 📋 Resumen de Endpoints del SB Agent (FastAPI)
+
+El Agente escucha en el puerto `9875`. La URL base para las pruebas locales es `http://localhost:9875`.
+
+### I. Estado y WOL (Heartbeat)
+
+Este *endpoint* es la base del *heartbeat* y la recolección de datos, incluyendo la **MAC Address** esencial para Wake-on-LAN (WOL).
+
+| Detalle | Especificación |
+| :--- | :--- |
+| **Método** | `GET` |
+| **Ruta** | `/agent/status` |
+| **Función** | `get_agent_status()` |
+| **Estado** | ✅ Validado |
+
+**Respuesta JSON (Código 200 OK):**
 
 ```json
 {
   "agentId": "f93943f8-6763-475b-9614-309768bbbb32",
   "online": true,
-  "cpuLoad": 0.3,
-  "ramUsagePercent": 0.0,
-  "osName": "Linux",
+  "cpuLoad": 0.3,          
+  "ramUsagePercent": 0.0,  
+  "osName": "Linux",       
   "lastSeenAt": "2025-12-13T17:50:00.902983Z",
   "overallSeverity": "NONE",
-  "macAddress": "08bfb8031373" // <-- CLAVE PARA WOL
+  "macAddress": "08bfb8031373" 
 }
 ```
 
-### II. Apagado del Sistema
+-----
 
-**Ruta:** `POST http://<AGENT_IP>:9875/sysadmin/shutdown`
+### II. Gestión de Energía (Apagado)
 
-El Orchestrator debe utilizar esta ruta antes de intentar el proceso de Wake-on-LAN.
+Permite al Orchestrator apagar la máquina Host remotamente.
 
-### III. Actualización del Sistema
+| Detalle | Especificación |
+| :--- | :--- |
+| **Método** | `POST` |
+| **Ruta** | `/sysadmin/shutdown` |
+| **Función** | `shutdown()` |
+| **Body** | Ninguno (`{}`) |
+| **Estado** | ✅ Validado |
 
-**Ruta:** `POST http://<AGENT_IP>:9875/sysadmin/update`
-
-Ejecuta los comandos de actualización del sistema sin interacción.
-
-### IV. Mostrar Video
-
-**Ruta:** `POST http://<AGENT_IP>:9875/sysadmin/multimedia/video`
-
-**Body (JSON):**
+**Respuesta JSON (Código 200 OK):**
 
 ```json
 {
-  "path": "/home/coders/Videos/sample.mp4"
+  "status": "success",
+  "message": "Host shutdown command executed."
+}
+```
+
+-----
+
+### III. Gestión del Sistema (Actualización)
+
+Permite al Orchestrator ejecutar las actualizaciones de seguridad y paquetes.
+
+| Detalle | Especificación |
+| :--- | :--- |
+| **Método** | `POST` |
+| **Ruta** | `/sysadmin/update` |
+| **Función** | `update_system()` |
+| **Body** | Ninguno (`{}`) |
+| **Estado** | ✅ Validado |
+
+**Respuesta JSON (Código 200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "System update initiated."
 }
 ```
 

@@ -3,7 +3,7 @@ import uuid
 
 # Configuración de conexión
 SERVER_URL = "http://10.0.120.2:8000/report" # IP de tu servidor C#
-PORT = 9876                                   # Puerto de escucha del agente
+PORT = 9875                                   # Puerto de escucha del agente
 HEARTBEAT_INTERVAL = 10                       # Segundos
 
 # --- Persistencia del ID ---

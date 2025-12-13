@@ -104,7 +104,6 @@ El Agente expone una API REST para la comunicación con el `sb-core-orchestrator
 | **I. Estado y WOL** | `GET` | `/agent/status` | **Heartbeat & MAC:** Reporta métricas (CPU, RAM) y la `macAddress` (crucial para WOL). | Ninguno |
 | **II. Gestión de Energía** | `POST`| `/sysadmin/shutdown`| **Apagado:** Ejecuta el apagado inmediato del Host. | Ninguno |
 | **III. Gestión del Sistema** | `POST`| `/sysadmin/update` | **Actualización:** Ejecuta `apt update -y && apt upgrade -y`. | Ninguno |
-| **IV. Control Multimedia**| `POST`| `/sysadmin/multimedia/video` | **Mostrar Video:** Abre un archivo de video en la sesión gráfica activa. | `{ "path": "ruta/local" }` |
 
 
 

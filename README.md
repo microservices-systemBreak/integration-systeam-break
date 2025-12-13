@@ -168,6 +168,3 @@ El Agente requiere ejecutarse como `root` para:
 3.  Interactuar con la sesión gráfica del usuario.
 
 <!-- end list -->
-
-```
-```

@@ -1,137 +1,173 @@
-## 💻 1. Visión General
+# 🐍 SB Agent (System Break Agent)
 
-El **`sb-agent`** es un agente de seguridad ligero basado en Python, diseñado para operar en la modalidad "Pull" (servidor REST) dentro de un contenedor Docker. Su función principal es servir como sensor y ejecutor de comandos del sistema para el microservicio de orquestación central (`sb-core-orchestrator`).
+El SB Agent es un microservicio ligero implementado en Python con FastAPI, diseñado para ejecutarse en máquinas host (Linux) como un servicio de `systemd` con privilegios de `root`. Su principal responsabilidad es interactuar con el sistema operativo (OS) para reportar el estado y ejecutar comandos remotos solicitados por el `sb-core-orchestrator`.
 
-### 🎯 Responsabilidades Clave
+---
 
-  * **Recolección de Inventario:** Proporcionar la lista de paquetes instalados en el sistema host para su análisis de vulnerabilidades.
-  * **Monitoreo de Estado:** Informar el estado de recursos en tiempo real (CPU, RAM) para actualizar el estado del *endpoint* (`endpoints_state`).
-  * **Detección de Intrusiones (IDS):** Monitorear el tráfico de red local para detectar patrones de ataques o escaneo de puertos.
-  * **Ejecución Remota:** Actuar como un ejecutor de comandos (a través de la API) para tareas como aplicar parches de seguridad.
+## 🏗️ Arquitectura y Dependencias
 
-## 🏗️ 2. Arquitectura (Modelo Inverso/Pull)
+Este Agente se basa en librerías estándar de Python para la interacción con el sistema y utiliza FastAPI para la capa de comunicación API.
 
-A diferencia de un Heartbeat tradicional, el `sb-agent` opera como un **servidor HTTP/REST** que espera solicitudes del `sb-core-orchestrator`.
+### Dependencias de Python
 
-| Servicio | Rol | Comunicación |
-| :--- | :--- | :--- |
-| **`sb-agent` (Este Repo)** | **Servidor HTTP (Esclavo)** | Escucha en el Puerto `9876` y responde a peticiones. |
-| **`sb-core-orchestrator`** | **Cliente HTTP (Maestro)** | Llama al Agente para solicitar paquetes o estado. |
+Para ejecutar este proyecto, es necesario instalar las siguientes librerías:
 
-## 🚀 3. Endpoints Expuestos (API)
+```bash
+pip install fastapi uvicorn psutil
+````
 
-El agente expone la siguiente API para el consumo del Orquestador C\# (FastAPI):
+| Librería | Propósito |
+| :--- | :--- |
+| `fastapi` | Creación de la API (Servidor HTTP). |
+| `uvicorn` | Servidor ASGI para servir la aplicación FastAPI. |
+| `psutil` | Acceso a métricas del sistema (CPU, RAM, MAC Address, etc.). |
 
-| Método | Endpoint | Propósito | Formato de Respuesta |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/agent/packages` | Usado para el flujo de escaneo. Recolecta el listado completo de paquetes instalados. | JSON (compatible con `POST /analyze/packages`) |
-| `GET` | `/agent/status` | Usado para actualizar el estado del endpoint (online/RAM/CPU/OS). | JSON (datos de recursos en tiempo real) |
+### Dependencias del Sistema Operativo (Host)
 
-### Formato de Respuesta para `/agent/packages`
+El Agente asume la presencia de las siguientes herramientas en el sistema Host (ej. Ubuntu/Debian):
 
-El JSON devuelto coincide con el `Request` esperado por el `sb-vuln-analyzer`:
+  * **`python3`** y **`pip`**
+  * **`systemd`** (para gestionar el servicio)
+  * **`apt`** (para la función de `update`)
+  * **`xdg-open`** (para la función `show_video`)
+
+-----
+
+## 🚀 Instalación y Despliegue
+
+El despliegue del Agente se realiza configurándolo como un servicio de `systemd` para asegurar que se ejecute al inicio del sistema y con los permisos necesarios.
+
+### 1\. Configuración de Entorno
+
+1.  Clonar el repositorio y crear un entorno virtual:
+    ```bash
+    git clone [REPO_URL] sb-agent
+    cd sb-agent
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt # O las dependencias listadas arriba
+    ```
+2.  Desactivar el entorno virtual cuando esté listo: `deactivate`
+
+### 2\. Creación del Servicio `systemd`
+
+Crear el archivo de unidad del servicio, típicamente en `/etc/systemd/system/sb-agent.service`.
+
+```ini
+# /etc/systemd/system/sb-agent.service
+[Unit]
+Description=SB Agent - Remote Management Service
+After=network.target
+
+[Service]
+User=root # Ejecutar como root para permisos de shutdown, apt y GUI
+Group=root
+WorkingDirectory=/home/coders/Escritorio/sb-agent 
+# Asegúrate de que esta ruta sea la correcta para tu proyecto
+ExecStart=/home/coders/Escritorio/sb-agent/venv/bin/python3 /home/coders/Escritorio/sb-agent/agent/api.py
+Restart=always
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 3\. Habilitar y Ejecutar el Servicio
+
+1.  Recargar la configuración de `systemd`:
+    ```bash
+    sudo systemctl daemon-reload
+    ```
+2.  Habilitar el servicio para que se inicie al arrancar:
+    ```bash
+    sudo systemctl enable sb-agent.service
+    ```
+3.  Iniciar el servicio:
+    ```bash
+    sudo systemctl start sb-agent.service
+    ```
+4.  Verificar el estado y los logs:
+    ```bash
+    sudo systemctl status sb-agent.service
+    sudo journalctl -u sb-agent.service -f
+    ```
+
+-----
+
+## ⚙️ Endpoints de la API
+
+El Agente expone una API REST para la comunicación con el `sb-core-orchestrator` en el puerto `9875`.
+
+| Categoría | Método | Endpoint | Descripción | Requerido |
+| :--- | :--- | :--- | :--- | :--- |
+| **I. Estado y WOL** | `GET` | `/agent/status` | **Heartbeat & MAC:** Reporta métricas (CPU, RAM) y la `macAddress` (crucial para WOL). | Ninguno |
+| **II. Gestión de Energía** | `POST`| `/sysadmin/shutdown`| **Apagado:** Ejecuta el apagado inmediato del Host. | Ninguno |
+| **III. Gestión del Sistema** | `POST`| `/sysadmin/update` | **Actualización:** Ejecuta `apt update -y && apt upgrade -y`. | Ninguno |
+| **IV. Control Multimedia**| `POST`| `/sysadmin/multimedia/video` | **Mostrar Video:** Abre un archivo de video en la sesión gráfica activa. | `{ "path": "ruta/local" }` |
+
+### I. Obtener Estado y MAC (WOL)
+
+**Ruta:** `GET http://<AGENT_IP>:9875/agent/status`
+
+**Respuesta de Ejemplo:**
 
 ```json
 {
-  "agentId": "uuid-del-agente",
-  "packages": [
-    {
-      "name": "openssl",
-      "version": "1.1.1l"
-    },
-    {
-      "name": "python3",
-      "version": "3.10.12-1"
-    }
-  ]
+  "agentId": "f93943f8-6763-475b-9614-309768bbbb32",
+  "online": true,
+  "cpuLoad": 0.3,
+  "ramUsagePercent": 0.0,
+  "osName": "Linux",
+  "lastSeenAt": "2025-12-13T17:50:00.902983Z",
+  "overallSeverity": "NONE",
+  "macAddress": "08bfb8031373" // <-- CLAVE PARA WOL
 }
 ```
 
-## ⚙️ 4. Configuración del Entorno
+### II. Apagado del Sistema
 
-### Dependencias
+**Ruta:** `POST http://<AGENT_IP>:9875/sysadmin/shutdown`
 
-El agente requiere las siguientes dependencias principales:
+El Orchestrator debe utilizar esta ruta antes de intentar el proceso de Wake-on-LAN.
 
-  * **Python 3.10+**
-  * **Uvicorn** (Servidor ASGI)
-  * **FastAPI** (Framework API)
-  * **Scapy** (Módulo para el IDS)
+### III. Actualización del Sistema
 
-Instale las dependencias desde `requirements.txt`:
+**Ruta:** `POST http://<AGENT_IP>:9875/sysadmin/update`
 
-```bash
-pip install -r requirements.txt
+Ejecuta los comandos de actualización del sistema sin interacción.
+
+### IV. Mostrar Video
+
+**Ruta:** `POST http://<AGENT_IP>:9875/sysadmin/multimedia/video`
+
+**Body (JSON):**
+
+```json
+{
+  "path": "/home/coders/Videos/sample.mp4"
+}
 ```
 
-### Variables de Configuración
+-----
 
-El archivo `agent/config.py` maneja la configuración esencial:
+## 💡 Consideraciones de Seguridad y GUI
 
-| Variable | Uso | Notas |
-| :--- | :--- | :--- |
-| `AGENT_ID` | Identificador único persistente. | Se lee de `data/agent_id.lic`. |
-| `PORT` | Puerto de escucha de la API (por defecto: `9876`). | Debe coincidir con la configuración `AgentBaseUrl` del Orquestador. |
-| `SERVER_URL` | URL del servidor central. | **(Legacy)** No utilizada en el modo API Pull actual. |
+### Interacción Gráfica (`show_video`)
 
-## 📦 5. Despliegue con Docker Compose
+Debido a que el Agente corre como `root` bajo `systemd` y las aplicaciones gráficas corren bajo la sesión del usuario (`coders` en el host), se realiza un esfuerzo para inyectar las variables de entorno `DISPLAY` y `XAUTHORITY` necesarias para interactuar con la GUI.
 
-El método de despliegue preferido es Docker Compose, que asegura el aislamiento y la portabilidad.
+El comando principal utilizado es `subprocess.Popen(["xdg-open", path], env=env)`. Si la función `show_video` falla, es probable que la configuración de `DISPLAY` o `XAUTHORITY` deba ajustarse al entorno específico del host.
 
-### Requisitos
+### Permisos
 
-Para el despliegue de este agente, es crucial que el contenedor utilice el modo de red del *host* para permitir que el IDS (`scapy`) capture el tráfico real y para que el Agente escuche en el puerto `9876` del host.
+El Agente requiere ejecutarse como `root` para:
 
-```yaml
-# Fragmento docker-compose.yml
-sb-agent-service:
-  build: .
-  # ...
-  network_mode: "host" 
-  cap_add:
-    - NET_ADMIN # Requerido para Scapy y la detección de red.
+1.  Ejecutar el comando de apagado (`systemctl poweroff`).
+2.  Ejecutar los comandos de actualización (`apt`).
+3.  Interactuar con la sesión gráfica del usuario.
+
+<!-- end list -->
+
 ```
-
-### Comandos de Despliegue
-
-1.  **Construir y Ejecutar (Primer Despliegue):**
-
-    ```bash
-    docker-compose up --build -d
-    ```
-
-2.  **Verificar Logs:**
-
-    ```bash
-    docker-compose logs -f sb-agent-service
-    ```
-
-    (Busque el mensaje: `Uvicorn running on http://0.0.0.0:9876`)
-
-3.  **Detener:**
-
-    ```bash
-    docker-compose down
-    ```
-
-## 🧪 6. Pruebas Funcionales (CURL)
-
-Una vez que el contenedor esté activo, verifique la funcionalidad de los *endpoints* llamándolos desde su terminal:
-
-### A. Prueba de Estado (RAM/CPU)
-
-```bash
-curl http://localhost:9876/agent/status
 ```
-
-### B. Prueba de Inventario (Paquetes)
-
-```bash
-curl http://localhost:9876/agent/packages
-```
-
-## ⚠️ 7. Notas Importantes
-
-  * **Advertencia de Scapy:** Es normal ver el *warning* de Scapy (`WARNING: Socket <scapy.arch.linux.L2ListenSocket...> failed with 'name 'syn_tracker' is not defined'.`). Este warning es de bajo impacto y el IDS continúa operando.
-  * **IDS en Segundo Plano:** El módulo de IDS (`start_ids_daemon`) se ejecuta en un hilo secundario y **no bloquea** el servidor de API principal.
-  * **Protocolo:** La comunicación entre `sb-core-orchestrator` y `sb-agent` es puramente **HTTP**; no se utiliza RabbitMQ ni sockets binarios.

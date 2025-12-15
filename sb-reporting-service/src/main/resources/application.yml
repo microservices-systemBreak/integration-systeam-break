@@ -22,7 +22,7 @@ spring:
     username: guest
     password: guest
     queues:
-      scan-completed: events.scans.completed # Nombre de la cola para el evento SCAN_COMPLETED
+      scan-completed: scan_completed_queue # Nombre de la cola alineado con Core Orchestrator
 
 server:
   port: 8084 # Puerto cambiado a 8084 para evitar conflictos con C#

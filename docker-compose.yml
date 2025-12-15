@@ -42,8 +42,8 @@ services:
 
   vuln-analyzer:
     build:
-      context: ./sb-vuln-analyzer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: sb-vuln-analyzer/Dockerfile
     ports:
       - "8081:8080"
     environment:
@@ -54,8 +54,8 @@ services:
 
   error-monitor:
     build:
-      context: ./sb-error-monitor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: sb-error-monitor/Dockerfile
     ports:
       - "8082:8080"
     environment:
@@ -88,8 +88,8 @@ services:
 
   sb-auth-service:
     build:
-      context: .
-      dockerfile: sb-auth-service/Dockerfile
+      context: ./sb-auth-service
+      dockerfile: Dockerfile
     ports:
       - "8083:8080"
     environment:

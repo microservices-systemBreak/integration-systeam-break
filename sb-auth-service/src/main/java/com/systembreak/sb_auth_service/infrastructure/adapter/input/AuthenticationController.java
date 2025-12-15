@@ -6,10 +6,14 @@ import com.systembreak.sb_auth_service.infrastructure.adapter.input.dto.LoginRes
 import com.systembreak.sb_auth_service.infrastructure.adapter.input.dto.RefreshTokenRequest;
 import com.systembreak.sb_auth_service.infrastructure.adapter.input.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,18 +23,26 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthenticationController {
 
     private final AuthenticationPort authenticationPort;
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
     /**
      * 1.1 Login: POST /auth/login
      */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        logger.info("-> Petición de Login recibida para el usuario: {}", request.username());
         try {
             LoginResponse response = authenticationPort.login(request);
+            logger.info("<- Login exitoso para el usuario: {}", request.username());
             return ResponseEntity.ok(response);
+        } catch (BadCredentialsException | UsernameNotFoundException e) {
+            logger.error("<- Error de Credenciales para {}: {}", request.username(), e.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password [29]: " + e.getMessage());
+            // Captura genérica si algo más falla antes de tiempo
         } catch (Exception e) {
+            logger.error("<- Error GENÉRICO durante Login para {}: {}", request.username(), e.getMessage(), e);
             // Error handling for Authentication failure (User not found, bad credentials) [29]
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password [29]");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Internal server error during login");
         }
     }
 
@@ -41,7 +53,6 @@ public class AuthenticationController {
     public ResponseEntity<String> logout(@RequestBody RefreshTokenRequest request) {
         try {
             authenticationPort.logout(request.refreshToken());
-            // Response: { "message": "Logout successful" } [39]
             return ResponseEntity.ok("Logout successful");
         } catch (Exception e) {
             // Assuming 400 Bad Request if the token format is invalid or general error

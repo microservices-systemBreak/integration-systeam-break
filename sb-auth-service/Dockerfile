@@ -5,14 +5,13 @@ FROM maven:3.9.5-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 # Copy the dependency files first (pom.xml)
-# Copy the dependency files first (pom.xml)
-COPY sb-auth-service/pom.xml .
+COPY pom.xml .
 
 # Download dependencies (uses layers efficiently to cache dependencies)
 RUN mvn dependency:go-offline
 
 # Copy the rest of the application source code
-COPY sb-auth-service/src ./src
+COPY src ./src
 
 # Build the application jar, skipping tests
 RUN mvn package -DskipTests
@@ -28,7 +27,7 @@ WORKDIR /app
 COPY --from=build /app/target/sb-auth-service-*.jar sb-auth-service.jar
 
 # Expose the application port (8080 default for Spring Boot)
-EXPOSE 8080
+EXPOSE 8282
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "sb-auth-service.jar"]

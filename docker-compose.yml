@@ -123,6 +123,32 @@ services:
       - postgres
       - rabbitmq
 
+  sb-agent:
+    build: .
+    container_name: sb-agent-service
+
+    # IMPORTANTE 1: Permisos y Red
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_ADMIN
+
+    # 🚨 AÑADIDO: Otorga permisos amplios para control de bajo nivel del Host
+    privileged: true
+
+    # 🚨 AÑADIDO: Permite que el contenedor vea y acceda a los PIDs del Host.
+    # Esto es crítico para que 'shutdown' funcione contra el sistema init del Host.
+    pid: host
+
+    # IMPORTANTE 2: Networking
+    network_mode: host
+
+    # IMPORTANTE 3: Persistencia de datos
+    volumes:
+      - agent_data:/sb-agent/data
+      - /etc/localtime:/etc/localtime:ro
+
 volumes:
   sb_postgres_data_new:
   rabbitmq_data:
+  agent_data:

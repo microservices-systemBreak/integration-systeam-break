@@ -27,3 +27,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+/* En tu archivo CSS global */
+html, body {
+  margin: 0; /* Elimina el margen predeterminado */
+  padding: 0; /* Elimina el padding predeterminado */
+  height: 100%; /* Asegura que ocupe todo el alto de la página */
+}
+
+body {
+  background-color: #05020b; /* Fondo negro o el color que prefieras */
+  color: white; /* Texto blanco */
+}
+
+.main-container {
+  max-width: 100%; /* Asegura que se ajuste bien */
+  padding: 16px;
+  margin: 0 auto; /* Centra el contenido */
+  box-sizing: border-box; /* Para evitar que el contenido se salga */
+}
+

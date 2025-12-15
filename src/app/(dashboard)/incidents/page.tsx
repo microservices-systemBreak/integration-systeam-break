@@ -101,147 +101,157 @@ export default function IncidentsPage() {
     });
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900 }}>Incidentes</h1>
-      <p style={{ marginTop: 4, opacity: 0.7, fontSize: 13 }}>
-        Historial de ataques detectados por agente, con sala, severidad y
-        detalle técnico.
-      </p>
-
-      {/* Filtros superiores */}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          marginTop: 16,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por PC, sala, id o descripción..."
-          style={{
-            padding: 10,
-            borderRadius: 10,
-            border: "1px solid #ddd",
-            minWidth: 260,
-          }}
+    <div className="relative min-h-screen bg-black text-white">
+      {/* Fondo spline */}
+      <div className="absolute inset-0 pointer-events-none opacity-50">
+        <spline-viewer
+          url="https://prod.spline.design/ffn2PNe9fYpcO7yA/scene.splinecode"
+          className="h-full w-full"
         />
-
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
-          style={{
-            padding: 10,
-            borderRadius: 10,
-            border: "1px solid #ddd",
-          }}
-        >
-          <option value="ALL">Todas las severidades</option>
-          <option value="CRITICAL">Críticos</option>
-          <option value="HIGH">Alta</option>
-          <option value="MEDIUM">Media</option>
-          <option value="LOW">Baja</option>
-        </select>
-
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-          style={{
-            padding: 10,
-            borderRadius: 10,
-            border: "1px solid #ddd",
-          }}
-        >
-          <option value="ALL">Todos los tipos</option>
-          <option value="PORT_SCAN">Port scan</option>
-          <option value="FLOOD">Flood / DoS</option>
-          <option value="LOGIN_BRUTE_FORCE">Brute force</option>
-          <option value="MALWARE">Malware</option>
-        </select>
-
-        <span style={{ fontSize: 13, opacity: 0.7 }}>
-          Incidentes: {filtered.length}
-        </span>
       </div>
 
-      {/* Lista de incidentes */}
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          marginTop: 18,
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-        }}
-      >
-        {filtered.map((inc) => (
-          <div
-            key={inc.id}
+      <div style={{ padding: 16 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900 }}>Incidentes</h1>
+        <p style={{ marginTop: 4, opacity: 0.7, fontSize: 13 }}>
+          Historial de ataques detectados por agente, con sala, severidad y
+          detalle técnico.
+        </p>
+
+        {/* Filtros superiores */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            marginTop: 16,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por PC, sala, id o descripción..."
             style={{
-              border: "1px solid #eee",
-              borderRadius: 14,
-              padding: 14,
-              background: "white",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
+              padding: 10,
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              minWidth: 260,
+            }}
+          />
+
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
+            style={{
+              padding: 10,
+              borderRadius: 10,
+              border: "1px solid #ddd",
             }}
           >
-            {/* Cabecera PC + sala */}
+            <option value="ALL">Todas las severidades</option>
+            <option value="CRITICAL">Críticos</option>
+            <option value="HIGH">Alta</option>
+            <option value="MEDIUM">Media</option>
+            <option value="LOW">Baja</option>
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+            style={{
+              padding: 10,
+              borderRadius: 10,
+              border: "1px solid #ddd",
+            }}
+          >
+            <option value="ALL">Todos los tipos</option>
+            <option value="PORT_SCAN">Port scan</option>
+            <option value="FLOOD">Flood / DoS</option>
+            <option value="LOGIN_BRUTE_FORCE">Brute force</option>
+            <option value="MALWARE">Malware</option>
+          </select>
+
+          <span style={{ fontSize: 13, opacity: 0.7 }}>
+            Incidentes: {filtered.length}
+          </span>
+        </div>
+
+        {/* Lista de incidentes */}
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            marginTop: 18,
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          }}
+        >
+          {filtered.map((inc) => (
             <div
+              key={inc.id}
               style={{
+                border: "1px solid #eee",
+                borderRadius: 14,
+                padding: 14,
+                background: "white",
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
+                flexDirection: "column",
+                gap: 8,
               }}
             >
-              <div>
-                <div style={{ fontWeight: 800 }}>
-                  {inc.deviceName ?? inc.deviceId}
+              {/* Cabecera PC + sala */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>
+                    {inc.deviceName ?? inc.deviceId}
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.7 }}>
+                    Sala: <strong>{inc.roomName ?? "Desconocida"}</strong>
+                    {inc.pcNumber && (
+                      <>
+                        {" "}
+                        • PC #<strong>{inc.pcNumber}</strong>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.7 }}>
-                  Sala: <strong>{inc.roomName ?? "Desconocida"}</strong>
-                  {inc.pcNumber && (
-                    <>
-                      {" "}
-                      • PC #<strong>{inc.pcNumber}</strong>
-                    </>
-                  )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={typeStyle(inc.type)}>{inc.type}</span>
+                  <span style={severityStyle(inc.severity)}>{inc.severity}</span>
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span style={typeStyle(inc.type)}>{inc.type}</span>
-                <span style={severityStyle(inc.severity)}>{inc.severity}</span>
+              {/* Descripción */}
+              <div style={{ fontSize: 13 }}>{inc.description}</div>
+
+              {/* Fecha */}
+              <div
+                style={{
+                  fontSize: 11,
+                  opacity: 0.7,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: 4,
+                }}
+              >
+                <span>ID incidente: {inc.id}</span>
+                <span>Detectado: {formatDateTime(inc.detectedAt)}</span>
               </div>
             </div>
+          ))}
 
-            {/* Descripción */}
-            <div style={{ fontSize: 13 }}>{inc.description}</div>
-
-            {/* Fecha */}
-            <div
-              style={{
-                fontSize: 11,
-                opacity: 0.7,
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: 4,
-              }}
-            >
-              <span>ID incidente: {inc.id}</span>
-              <span>Detectado: {formatDateTime(inc.detectedAt)}</span>
+          {filtered.length === 0 && (
+            <div style={{ opacity: 0.7 }}>
+              No hay incidentes con esos filtros. Prueba limpiando la búsqueda.
             </div>
-          </div>
-        ))}
-
-        {filtered.length === 0 && (
-          <div style={{ opacity: 0.7 }}>
-            No hay incidentes con esos filtros. Prueba limpiando la búsqueda.
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

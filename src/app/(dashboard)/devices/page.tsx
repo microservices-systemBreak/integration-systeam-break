@@ -1,8 +1,8 @@
-// src/app/(dashboard)/devices/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import { DEVICES, DeviceStatus } from "@/src/config/inventory";
+import Card from "@/src/components/card/card";  
 
 type Command = "POWER_ON" | "POWER_OFF" | "WELCOME";
 
@@ -11,7 +11,7 @@ export default function DevicesPage() {
   const [statusFilter, setStatusFilter] = useState<DeviceStatus | "ALL">("ALL");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
-  // 1) Lista filtrada por búsqueda + estado
+  // Lista filtrada por búsqueda + estado
   const filtered = useMemo(() => {
     return DEVICES.filter((d) => {
       const q = query.toLowerCase().trim();
@@ -29,7 +29,7 @@ export default function DevicesPage() {
     });
   }, [query, statusFilter]);
 
-  // 2) Selección
+  // Selección
   const allSelected =
     filtered.length > 0 && filtered.every((d) => selected[d.id]);
   const selectedIds = filtered
@@ -49,7 +49,7 @@ export default function DevicesPage() {
     setSelected(next);
   };
 
-  // 3) Comandos simulados (luego aquí pegamos el POST /core/commands)
+  // Comandos simulados (luego aquí pegamos el POST /core/commands)
   const sendCommand = (action: Command) => {
     if (selectedIds.length === 0) {
       alert("Selecciona al menos un computador.");
@@ -59,9 +59,7 @@ export default function DevicesPage() {
     console.log("Comando:", action, "a PCs:", selectedIds);
 
     if (action === "WELCOME") {
-      alert(
-        `Se envió mensaje de bienvenida a ${selectedIds.length} equipo(s).`
-      );
+      alert(`Se Actualizó ${selectedIds.length} equipo(s).`);
     } else if (action === "POWER_ON") {
       alert(`Se envió comando de ENCENDER a ${selectedIds.length} equipo(s).`);
     } else {
@@ -69,7 +67,7 @@ export default function DevicesPage() {
     }
   };
 
-  // 4) Helper visual para el badge de estado
+  // Helper visual para el badge de estado
   const getStatusStyle = (status: DeviceStatus): React.CSSProperties => {
     const base: React.CSSProperties = {
       padding: "4px 8px",
@@ -88,176 +86,91 @@ export default function DevicesPage() {
   };
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900 }}>Computadores</h1>
-      <p style={{ marginTop: 4, opacity: 0.7, fontSize: 13 }}>
-        Vista global de todos los PCs. Puedes buscar, filtrar, seleccionar y
-        enviar acciones masivas.
-      </p>
-
-      {/* Barra de búsqueda + filtros + seleccionar todos */}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          marginTop: 16,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por ID, nombre u hostname..."
-          style={{
-            padding: 10,
-            borderRadius: 10,
-            border: "1px solid #ddd",
-            minWidth: 260,
-          }}
+    <div className="relative min-h-screen bg-black text-white overflow-hidden">
+      {/* Fondo con Spline */}
+      <div className="pointer-events-none absolute inset-0 opacity-45">
+        <spline-viewer
+          url="https://prod.spline.design/NEQBXr1i0Otgs9Nn/scene.splinecode"
+          className="h-full w-full"
         />
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as any)}
-          style={{
-            padding: 10,
-            borderRadius: 10,
-            border: "1px solid #ddd",
-          }}
-        >
-          <option value="ALL">Todos</option>
-          <option value="ONLINE">Online</option>
-          <option value="OFFLINE">Offline</option>
-          <option value="ERROR">Error</option>
-        </select>
-
-        <button
-          onClick={toggleAll}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid #ddd",
-            cursor: "pointer",
-          }}
-        >
-          {allSelected ? "Deseleccionar todos" : "Seleccionar todos"}
-        </button>
-
-        <span style={{ fontSize: 13, opacity: 0.7 }}>
-          Seleccionados: {selectedIds.length}
-        </span>
       </div>
 
-      {/* Botones de acciones masivas */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginTop: 10,
-          flexWrap: "wrap",
-        }}
-      >
-        <button
-          onClick={() => sendCommand("POWER_ON")}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid #0a0",
-            cursor: "pointer",
-          }}
-        >
-          Encender seleccionados
-        </button>
+      {/* Contenido */}
+      <main className="relative mx-auto flex flex-col gap-8 px-6 py-8 max-w-6xl">
+        <h1 className="text-4xl font-bold">Computadores</h1>
+        <p className="opacity-0.7 text-lg">Vista global de todos los PCs.</p>
 
-        <button
-          onClick={() => sendCommand("POWER_OFF")}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid #c00",
-            cursor: "pointer",
-          }}
-        >
-          Apagar seleccionados
-        </button>
+        {/* Barra de búsqueda + filtros + seleccionar todos */}
+        <div className="flex gap-10 mt-16 flex-wrap items-center">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por ID, nombre u hostname..."
+            className="p-3 rounded-lg border border-gray-600 min-w-[250px] bg-gray-800"
+          />
 
-        <button
-          onClick={() => sendCommand("WELCOME")}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid #005",
-            cursor: "pointer",
-          }}
-        >
-          Mensaje de bienvenida
-        </button>
-      </div>
-
-      {/* Lista de PCs */}
-      <div
-        style={{
-          display: "grid",
-          gap: 12,
-          marginTop: 18,
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-        }}
-      >
-        {filtered.map((d) => (
-          <div
-            key={d.id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 14,
-              padding: 14,
-              background: "white",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="p-3 rounded-lg border border-gray-600 bg-gray-800"
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 800 }}>{d.name}</div>
-                <div style={{ fontSize: 12, opacity: 0.7 }}>
-                  ID: {d.id}
-                </div>
-              </div>
+            <option value="ALL">Todos</option>
+            <option value="ONLINE">Online</option>
+            <option value="OFFLINE">Offline</option>
+            <option value="ERROR">Error</option>
+          </select>
 
-              <span style={getStatusStyle(d.status)}>{d.status}</span>
-            </div>
+          <button
+            onClick={toggleAll}
+            className="px-4 py-2 rounded-lg border border-gray-600 bg-gray-800 hover:bg-gray-700"
+          >
+            {allSelected ? "Deseleccionar todos" : "Seleccionar todos"}
+          </button>
 
-            <div style={{ fontSize: 12, opacity: 0.75 }}>
-              Sala: <strong>{d.roomName ?? d.roomId}</strong> • PC #
-              <strong>{d.pcNumber ?? "?"}</strong>
-              {d.ip && <> • IP: {d.ip}</>}
-            </div>
+          <span className="text-sm opacity-70">
+            Seleccionados: {selectedIds.length}
+          </span>
+        </div>
 
-            <div style={{ marginTop: 4, display: "flex", justifyContent: "flex-end" }}>
-              <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={!!selected[d.id]}
-                  onChange={() => toggleOne(d.id)}
-                  style={{ width: 16, height: 16 }}
-                />
-                Seleccionar
-              </label>
-            </div>
-          </div>
-        ))}
+        {/* Botones de acciones masivas */}
+        <div className="flex gap-8 mt-6">
+          <button
+            onClick={() => sendCommand("POWER_ON")}
+            className="px-6 py-3 rounded-lg border border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+          >
+            Encender seleccionados
+          </button>
 
-        {filtered.length === 0 && (
-          <div style={{ opacity: 0.7 }}>No hay computadores con esos filtros.</div>
-        )}
-      </div>
+          <button
+            onClick={() => sendCommand("POWER_OFF")}
+            className="px-6 py-3 rounded-lg border border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+          >
+            Apagar seleccionados
+          </button>
+
+          <button
+            onClick={() => sendCommand("WELCOME")}
+            className="px-6 py-3 rounded-lg border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+          >
+            Actualizar
+          </button>
+        </div>
+
+        {/* Lista de PCs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {filtered.map((d) => (
+            <Card
+              key={d.id}
+              id={d.id}  // Aquí agregamos el ID que falta
+              title={d.name}
+              content={`ID: ${d.id}`}
+              status={d.status.toLowerCase() as "online" | "offline" | "error"}
+              extraInfo={`Sala: ${d.roomName ?? d.roomId} • PC #${d.pcNumber ?? "?"}`}
+              onClick={() => toggleOne(d.id)} // Función de clic para seleccionar
+            />
+          ))}
+        </div>
+      </main>
     </div>
   );
 }

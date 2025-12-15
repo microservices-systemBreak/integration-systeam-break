@@ -16,18 +16,33 @@ Once the system is running (`docker-compose up -d`), you can access the followin
 
 > **Note**: For Java services (Auth, Reporting), the path is typically `/swagger-ui/index.html`. For C# services, it is `/swagger`.
 
-## 🛠 Manual Testing Workflow
+## 🛠 Manual Testing Workflow (Step-by-Step)
 
-1.  **Authentication**:
-    *   Go to **Auth Service** Swagger.
-    *   Use `/auth/register` to create a user.
-    *   Use `/auth/login` to get a `Bearer Token`.
+### Step 1: Create User & Login (Auth Service)
+1.  Open **Auth Service** Swagger: [http://localhost:8083/swagger-ui/index.html](http://localhost:8083/swagger-ui/index.html)
+2.  Expand **AuthController** -> `POST /auth/register`.
+    *   Click **Try it out**.
+    *   Enter JSON: `{"username": "testuser", "password": "password123", "email": "test@example.com", "role": "USER"}`
+    *   Click **Execute**.
+3.  Expand `POST /auth/login`.
+    *   Click **Try it out**.
+    *   Enter JSON: `{"username": "testuser", "password": "password123"}`
+    *   Click **Execute**.
+4.  copy the **token** string from the Response body (e.g., `eyJhbGci...`).
 
-2.  **Core Operations**:
-    *   Go to **Core Orchestrator** Swagger.
-    *   Authorize using the Bearer Token.
-    *   Use `POST /api/scans` to initiate a scan for an endpoint.
+### Step 2: Configure System Scan (Core Orchestrator)
+1.  Open **Core Orchestrator** Swagger: [http://localhost:8080/swagger](http://localhost:8080/swagger)
+2.  Click the **Authorize** button (top right).
+3.  In the value box, type: `Bearer ` followed by your token.
+    *   Example: `Bearer eyJhbGci...`
+    *   *Note: Don't forget the space after Bearer!*
+4.  Click **Authorize** -> **Close**.
+5.  Expand **Scan** -> `POST /api/scans`.
+    *   Click **Try it out**.
+    *   Enter JSON: `{"endpointId": "linux-001", "scanType": "Full"}`
+    *   Click **Execute**.
+6.  Note the `jobId` in the response.
 
-3.  **Verification**:
-    *   Check **Vuln Analyzer** logs or Swagger to see analysis requests.
-    *   Check **Reporting Service** logs for report generation.
+### Step 3: Verify Results
+*   **Vuln Analyzer**: Open [http://localhost:8081/swagger](http://localhost:8081/swagger), check logs or health.
+*   **Reporting**: Open [http://localhost:8084/swagger-ui/index.html](http://localhost:8084/swagger-ui/index.html). If implemented, check `GET /reports/{jobId}`.

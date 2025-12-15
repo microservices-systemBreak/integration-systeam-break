@@ -1,5 +1,5 @@
 # Stage 1: Build the application using a Maven base image (Java 21)
-FROM maven:3.9.5-eclipse-temurin-21-alpine AS build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -18,7 +18,7 @@ COPY src ./src
 RUN mvn package -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
 
 # Stage 2: Create the final minimal runtime image (Java 21 JRE)
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 
 # Set the working directory
 WORKDIR /app

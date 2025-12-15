@@ -21,7 +21,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
+            <groupId>org.springframework.cloud</
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
         <dependency>

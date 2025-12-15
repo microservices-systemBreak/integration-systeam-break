@@ -1,14 +1,15 @@
-# Stage 1: Build the application
-FROM maven:3.9.5-eclipse-temurin-21-alpine AS build
-WORKDIR /app
-COPY sb-api-gateway/pom.xml .
-RUN mvn dependency:go-offline
-COPY sb-api-gateway/src ./src
-RUN mvn package -DskipTests
+# Usa una imagen base de OpenJDK para Java 21
+FROM openjdk:21-jdk-slim
 
-# Stage 2: Run the application
-FROM eclipse-temurin:21-jre-alpine
+# Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
-COPY --from=build /app/target/sb-api-gateway-*.jar app.jar
+
+# Copia el archivo JAR de tu aplicación al contenedor
+# Asegúrate de que el nombre del JAR coincida con el que genera 'mvn package'
+COPY target/sb-api-gateway-0.0.1-SNAPSHOT.jar app.jar
+
+# Expone el puerto en el que corre tu aplicación Spring Boot (8080 por defecto)
 EXPOSE 8080
+
+# Define el comando para ejecutar la aplicación cuando el contenedor se inicie
 ENTRYPOINT ["java", "-jar", "app.jar"]

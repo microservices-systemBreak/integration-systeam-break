@@ -27,7 +27,7 @@ WORKDIR /app
 COPY --from=build /app/target/sb-auth-service-*.jar sb-auth-service.jar
 
 # Expose the application port (8080 default for Spring Boot)
-EXPOSE 8080
+EXPOSE 8282
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "sb-auth-service.jar"]

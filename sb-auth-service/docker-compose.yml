@@ -43,9 +43,11 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
     command: >
-      java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=y 
+      java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n 
       -jar /app/sb-auth-service.jar 
       --logging.level.root=DEBUG
+      --logging.level.org.springframework.security=DEBUG
+      --logging.level.org.springframework.web=DEBUG
     depends_on:
       # Asegura que la BD esté saludable antes de iniciar la aplicación
       auth_db:

@@ -33,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String username;
+        System.out.println("-> [JWT Filter] Entrando a doFilterInternal para: " + request.getServletPath());
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -65,5 +66,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
+        System.out.println("-> [JWT Filter] Evaluando si se debe filtrar la ruta: " + request.getServletPath());
+        // Ignora el filtro JWT para las URLs públicas (login, refresh, logout)
+        return request.getServletPath().contains("/auth/login")
+                || request.getServletPath().contains("/auth/refresh")
+                || request.getServletPath().contains("/auth/logout");
     }
 }

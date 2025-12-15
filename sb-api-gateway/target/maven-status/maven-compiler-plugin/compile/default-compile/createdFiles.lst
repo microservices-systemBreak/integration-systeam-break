@@ -1,2 +1,3 @@
-com/systembreak/apigateway/filter/CorrelationIdGlobalFilter.class
 com/systembreak/apigateway/SbApiGatewayApplication.class
+com/systembreak/apigateway/config/SecurityConfig.class
+com/systembreak/apigateway/filter/CorrelationIdGlobalFilter.class

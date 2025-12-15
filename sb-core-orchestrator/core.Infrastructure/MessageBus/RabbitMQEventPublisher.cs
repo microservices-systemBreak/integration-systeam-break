@@ -80,10 +80,20 @@ public class RabbitMqEventPublisher : IEventPublisher, IDisposable
             var message = JsonSerializer.Serialize(eventData);
             var body = Encoding.UTF8.GetBytes(message);
 
-            _channel.BasicPublish(exchange: "",
-                                 routingKey: queueName,
-                                 basicProperties: null,
-                                 body: body);
+            // Ensure the destination queue exists using the provided queue name
+            _channel.QueueDeclare(
+                queue: queueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
+
+            _channel.BasicPublish(
+                exchange: "",
+                routingKey: queueName,
+                basicProperties: null,
+                body: body);
             _logger.LogInformation("Published event to {QueueName}: {Message}", queueName, message);
         }
         catch (Exception ex)

@@ -1,31 +1,122 @@
 server:
-  port: 8080 # El gateway correrá en el puerto 8080
+  port: 8000 # Cambiamos el puerto del Gateway a 8000 para estandarizar
 
 spring:
   application:
     name: sb-api-gateway
   cloud:
     gateway:
+      # =================================================================
+      # DEFINICIÓN DE RUTAS DEL API GATEWAY
+      # =================================================================
       routes:
-        # Regla para enrutar al servicio de reportes
-        - id: reporting-service-route
-          uri: http://localhost:8081 # La URL donde corre tu sb-reporting-service
-          predicates:
-            - Path=/reports/** # Cualquier petición que empiece con /reports/...
-
-        # Aquí añadiremos las reglas para /auth/** y /core/** más adelante
-        - id: auth-service-route
-          uri: http://localhost:8082 # Suponiendo que el servicio de autenticación corre en el puerto 8082
+        # 1. Ruta para el Servicio de Autenticación (Java)
+        - id: sb-auth-service
+          uri: http://sb-auth-service:8080 # Usar el nombre del servicio de Docker y su puerto interno
           predicates:
             - Path=/auth/**
-        
-        - id: core-service-route
-          uri: http://localhost:5000 # Suponiendo que el servicio C# corre en el puerto 5000
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: authServiceCircuitBreaker
+                fallbackUri: forward:/fallback/authService
+
+        # 2. Ruta para el Servicio de Reportes (Java)
+        - id: sb-reporting-service
+          uri: http://sb-reporting-service:8084 # Usar el nombre del servicio de Docker y su puerto interno
+          predicates:
+            - Path=/reports/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: reportingServiceCircuitBreaker
+                fallbackUri: forward:/fallback/reportingService
+
+        # 3. Ruta para el Orquestador Core (C#)
+        - id: sb-core-orchestrator
+          uri: http://sb-core-orchestrator:5001 # Corregido para que coincida con el nombre del servicio
           predicates:
             - Path=/core/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: coreServiceCircuitBreaker
+                fallbackUri: forward:/fallback/coreService
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,gateway
+        # 4. Ruta para el Monitor de Errores (C#)
+        - id: sb-error-monitor
+          uri: http://sb-error-monitor:5003 # Corregido para que coincida con el nombre del servicio
+          predicates:
+            - Path=/errors/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: errorMonitorCircuitBreaker
+                fallbackUri: forward:/fallback/error
+
+      # =================================================================
+      # CONFIGURACIÓN GLOBAL DE FILTROS Y TIMEOUTS
+      # =================================================================
+      httpclient:
+        connect-timeout: 5000 # 5 segundos
+        response-timeout: 10s # 10 segundos
+
+  # =====================================================================
+  # CONFIGURACIÓN DE SEGURIDAD (VALIDACIÓN DE JWT)
+  # =====================================================================
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # El Gateway usará esta URI para obtener las claves públicas y validar la firma del token JWT
+          jwk-set-uri: http://sb-auth-service:8080/oauth2/jwks
+
+# =======================================================================
+# CONFIGURACIÓN DE RESILIENCE4J (CIRCUIT BREAKER)
+# =======================================================================
+resilience4j:
+  circuitbreaker:
+    instances:
+      authServiceCircuitBreaker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      reportingServiceCircuitBreaker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      coreServiceCircuitBreaker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      errorMonitorCircuitBreaker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  timelimiter:
+    instances:
+      default:
+        timeout-duration: 5s
+
+# =======================================================================
+# CONFIGURACIÓN DE LOGGING
+# =======================================================================
+logging:
+  level:
+    root: INFO
+    com.systembreak: DEBUG # Más detalle para nuestro código
+    org.springframework.cloud.gateway: TRACE # Muy útil para depurar enrutamiento y filtros
+
+# =======================================================================
+# CONFIGURACIÓN DE DOCUMENTACIÓN (OPENAPI/SWAGGER)
+# =======================================================================
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  show-actuator: true

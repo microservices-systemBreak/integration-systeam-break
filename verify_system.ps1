@@ -18,11 +18,10 @@ Write-Host "--- Starting System Verification ---" -ForegroundColor Cyan
 
 # 1. Health Checks
 $gatewayUp = Test-Endpoint "API Gateway Health" "http://localhost:8000/actuator/health"
-# Note: Internal services might not be exposed on localhost if not mapped, checking mapped ports
-$coreUp = Test-Endpoint "Core Orchestrator Swagger" "http://localhost:8080/swagger/index.html"
-$authUp = Test-Endpoint "Auth Service Health" "http://localhost:8083/actuator/health"
+$authUp = Test-Endpoint "Auth Service Health" "http://localhost:8080/actuator/health"
+$coreUp = Test-Endpoint "Core Orchestrator Swagger" "http://localhost:5001/swagger/index.html" # Puerto C#
 
-if (-not ($gatewayUp -and $coreUp -and $authUp)) {
+if (-not ($gatewayUp -and $authUp -and $coreUp)) {
     Write-Host "❌ Critical services are down. Aborting functional tests." -ForegroundColor Red
     exit 1
 }
@@ -37,7 +36,7 @@ $user = @{
     username = "testrunner" # Adding username just in case
 }
 
-$registerUrl = "http://localhost:8083/auth/register" # Direct to service
+$registerUrl = "http://localhost:8000/auth/register" # A través del Gateway
 # Try registering (ignore if already exists)
 try {
     Write-Host "Registering user..."
@@ -48,7 +47,7 @@ try {
 }
 
 # Login
-$loginUrl = "http://localhost:8083/auth/login"
+$loginUrl = "http://localhost:8000/auth/login" # A través del Gateway
 $loginBody = @{
     email = "testrunner@example.com" # Some implementations use email
     username = "testrunner@example.com" # Some use username, trying email as username if needed
@@ -77,7 +76,7 @@ try {
 
 # 3. Functional Test: Create Scan
 Write-Host "`n--- Testing Core Logic (Create Scan) ---" -ForegroundColor Cyan
-$scanUrl = "http://localhost:8080/api/scans"
+$scanUrl = "http://localhost:8000/core/requests/scan-packages" # Ruta correcta a través del Gateway
 $scanBody = @{
     targetUrl = "https://example.com"
     scanType = "FULL"

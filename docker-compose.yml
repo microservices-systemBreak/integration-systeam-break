@@ -1,10 +1,12 @@
 version: '3.8'
 
 services:
+  # --- Infraestructura Base ---
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: system_break
+      # La BD inicial no es tan importante, ya que init.sql crea las específicas
+      POSTGRES_DB: postgres 
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
@@ -12,77 +14,89 @@ services:
     volumes:
       - sb_postgres_data_new:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - system-break-net
 
   rabbitmq:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
       - "15672:15672"
+    volumes:
+      - sb_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - system-break-net
 
   # --- C# Services ---
-  core-orchestrator:
+  sb-core-orchestrator: # Nombre de servicio consistente con el Gateway
     build:
       context: .
       dockerfile: sb-core-orchestrator/Dockerfile
+    container_name: sb_core_orchestrator_container
     ports:
-      - "8080:8080"
+      - "5001:5001" # Puerto estándar para este servicio
     environment:
+      - ASPNETCORE_URLS=http://+:5001 # Instruye a C# para que escuche en el puerto 5001
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_core_db;Username=postgres;Password=password
       - RabbitMQ__Host=rabbitmq
     depends_on:
       - postgres
       - rabbitmq
+    networks:
+      - system-break-net
 
-  vuln-analyzer:
+  sb-vuln-analyzer: # Nombre de servicio consistente
     build:
       context: .
       dockerfile: sb-vuln-analyzer/Dockerfile
+    container_name: sb_vuln_analyzer_container
     ports:
-      - "8081:8080"
+      - "5002:5002" # Puerto estándar para este servicio
     environment:
+      - ASPNETCORE_URLS=http://+:5002
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_vuln_db;Username=postgres;Password=password
     depends_on:
       - postgres
+    networks:
+      - system-break-net
 
-  error-monitor:
+  sb-error-monitor: # Nombre de servicio consistente
     build:
       context: .
       dockerfile: sb-error-monitor/Dockerfile
+    container_name: sb_error_monitor_container
     ports:
-      - "8082:8080"
+      - "5003:5003" # Puerto estándar para este servicio
     environment:
+      - ASPNETCORE_URLS=http://+:5003
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_error_db;Username=postgres;Password=password
       - RabbitMQ__Host=rabbitmq
     depends_on:
       - postgres
       - rabbitmq
+    networks:
+      - system-break-net
 
   # --- Java Services ---
   sb-api-gateway:
     build:
       context: .
       dockerfile: sb-api-gateway/Dockerfile
+    container_name: sb_api_gateway
     ports:
-      - "8000:8080"
-    environment:
-      - SERVER_PORT=8080
-      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://sb-auth-service:8080
-      - SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0=Path=/auth/**
-      - SPRING_CLOUD_GATEWAY_ROUTES_1_URI=http://core-orchestrator:8080
-      - SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0=Path=/api/scans/**
-      - SPRING_CLOUD_GATEWAY_ROUTES_2_URI=http://sb-reporting-service:8081
-      - SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0=Path=/reports/**
+      - "8000:8080" 
     depends_on:
       - sb-auth-service
-      - core-orchestrator
+      - sb-core-orchestrator
       - sb-reporting-service
+    networks:
+      - system-break-net
 
   sb-auth-service:
     build:
       context: .
       dockerfile: sb-auth-service/Dockerfile
-    ports:
-      - "8083:8080"
+    container_name: sb_auth_service_container
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_auth_db
       - SPRING_DATASOURCE_USERNAME=postgres
@@ -93,19 +107,21 @@ services:
       - JWT_REFRESH_EXPIRATION_MS=604800000 # 7 days
     depends_on:
       - postgres
+    networks:
+      - system-break-net
 
   sb-reporting-service:
     build:
       context: .
       dockerfile: sb-reporting-service/Dockerfile
+    container_name: sb_reporting_service_container
     ports:
-      - "8084:8081"
+      - "8084:8080" # Mapeamos al puerto 8084 que definimos en su application.yml
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_reporting_db
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SERVER_PORT=8081
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=guest
@@ -113,6 +129,14 @@ services:
     depends_on:
       - postgres
       - rabbitmq
+    networks:
+      - system-break-net
 
 volumes:
   sb_postgres_data_new:
+  sb_rabbitmq_data:
+
+# Red compartida para todos los microservicios del sistema
+networks:
+  system-break-net:
+    driver: bridge

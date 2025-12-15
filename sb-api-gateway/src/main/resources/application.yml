@@ -1,3 +1,6 @@
+server:
+  port: 8000 # Cambiamos el puerto del Gateway a 8000 para estandarizar
+
 spring:
   application:
     name: sb-api-gateway
@@ -9,40 +12,40 @@ spring:
       routes:
         # 1. Ruta para el Servicio de Autenticación (Java)
         - id: sb-auth-service
-          uri: http://localhost:8081 # Puerto estándar para el servicio de auth
+          uri: http://sb-auth-service:8080 # Usar el nombre del servicio de Docker y su puerto interno
           predicates:
             - Path=/auth/**
           filters:
             - name: CircuitBreaker
               args:
                 name: authServiceCircuitBreaker
-                fallbackUri: forward:/fallback/auth
+                fallbackUri: forward:/fallback/authService
 
         # 2. Ruta para el Servicio de Reportes (Java)
         - id: sb-reporting-service
-          uri: http://localhost:8082 # Puerto estándar para el servicio de reportes
+          uri: http://sb-reporting-service:8084 # Usar el nombre del servicio de Docker y su puerto interno
           predicates:
             - Path=/reports/**
           filters:
             - name: CircuitBreaker
               args:
                 name: reportingServiceCircuitBreaker
-                fallbackUri: forward:/fallback/reporting
+                fallbackUri: forward:/fallback/reportingService
 
         # 3. Ruta para el Orquestador Core (C#)
         - id: sb-core-orchestrator
-          uri: http://localhost:5001 # Puerto estándar para el servicio core en C#
+          uri: http://sb-core-orchestrator:5001 # Corregido para que coincida con el nombre del servicio
           predicates:
             - Path=/core/**
           filters:
             - name: CircuitBreaker
               args:
                 name: coreServiceCircuitBreaker
-                fallbackUri: forward:/fallback/core
+                fallbackUri: forward:/fallback/coreService
 
         # 4. Ruta para el Monitor de Errores (C#)
         - id: sb-error-monitor
-          uri: http://localhost:5002 # Puerto estándar para el servicio de errores en C#
+          uri: http://sb-error-monitor:5003 # Corregido para que coincida con el nombre del servicio
           predicates:
             - Path=/errors/**
           filters:
@@ -66,7 +69,7 @@ spring:
       resourceserver:
         jwt:
           # El Gateway usará esta URI para obtener las claves públicas y validar la firma del token JWT
-          jwk-set-uri: http://localhost:8081/oauth2/jwks
+          jwk-set-uri: http://sb-auth-service:8080/oauth2/jwks
 
 # =======================================================================
 # CONFIGURACIÓN DE RESILIENCE4J (CIRCUIT BREAKER)

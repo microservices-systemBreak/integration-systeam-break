@@ -1,9 +1,8 @@
 $services = @(
     @{ Name="Gateway"; Url="http://localhost:8000/actuator/health"; Port=8000 },
-    @{ Name="Core Orchestrator"; Url="http://localhost:8080/health"; Port=8080 },
-    @{ Name="Vuln Analyzer"; Url="http://localhost:8081/health"; Port=8081 },
-    @{ Name="Error Monitor"; Url="http://localhost:8082/health"; Port=8082 },
-    @{ Name="Auth Service"; Url="http://localhost:8083/actuator/health"; Port=8083 },
+    @{ Name="Auth Service"; Url="http://localhost:8080/actuator/health"; Port=8080 },
+    @{ Name="Core Orchestrator"; Url="http://localhost:5001/health"; Port=5001 }, # Puerto estándar C#
+    @{ Name="Error Monitor"; Url="http://localhost:5002/health"; Port=5002 }, # Puerto estándar C#
     @{ Name="Reporting Service"; Url="http://localhost:8084/actuator/health"; Port=8084 }
 )
 

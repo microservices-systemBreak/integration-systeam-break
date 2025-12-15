@@ -1,5 +1,6 @@
-# Usa una imagen base de OpenJDK para Java 21
-FROM openjdk:21-jdk-slim
+# Usa una imagen base de Temurin (Eclipse) para Java 21
+# Cambio de openjdk:21-jdk-slim porque ese tag puede no existir en el registry.
+FROM eclipse-temurin:21-jdk-jammy
 
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app

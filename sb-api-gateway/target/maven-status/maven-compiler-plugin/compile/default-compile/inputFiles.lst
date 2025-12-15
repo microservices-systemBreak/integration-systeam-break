@@ -1,2 +1,3 @@
-/home/coders/Documentos/sb-api-gateway/temp-api-gateway/src/main/java/com/systembreak/apigateway/filter/CorrelationIdGlobalFilter.java
-/home/coders/Documentos/sb-api-gateway/temp-api-gateway/src/main/java/com/systembreak/apigateway/SbApiGatewayApplication.java
+/home/coders/projects/system-break/integration-systeam-break/sb-api-gateway/src/main/java/com/systembreak/apigateway/config/SecurityConfig.java
+/home/coders/projects/system-break/integration-systeam-break/sb-api-gateway/src/main/java/com/systembreak/apigateway/filter/CorrelationIdGlobalFilter.java
+/home/coders/projects/system-break/integration-systeam-break/sb-api-gateway/src/main/java/com/systembreak/apigateway/SbApiGatewayApplication.java

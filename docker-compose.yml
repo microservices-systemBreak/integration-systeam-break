@@ -33,7 +33,8 @@ services:
       - "${PORT_CORE}:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=sb_core_db;Username=${DB_USER};Password=${DB_PASSWORD}
+      # Aiven requires SSL. We map Ssl Mode to the env variable (Disable/Require)
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=${DB_NAME_CORE};Username=${DB_USER};Password=${DB_PASSWORD};Ssl Mode=${DB_SSL_MODE};Trust Server Certificate=true
       - RabbitMQ__Host=${RABBITMQ_HOST}
       - RabbitMQ__Username=${RABBITMQ_USER}
       - RabbitMQ__Password=${RABBITMQ_PASSWORD}
@@ -50,7 +51,7 @@ services:
       - "${PORT_VULN}:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=sb_vuln_db;Username=${DB_USER};Password=${DB_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=${DB_NAME_VULN};Username=${DB_USER};Password=${DB_PASSWORD};Ssl Mode=${DB_SSL_MODE};Trust Server Certificate=true
     depends_on:
       - postgres
 
@@ -62,7 +63,7 @@ services:
       - "${PORT_ERROR}:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=sb_error_db;Username=${DB_USER};Password=${DB_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=${DB_NAME_ERROR};Username=${DB_USER};Password=${DB_PASSWORD};Ssl Mode=${DB_SSL_MODE};Trust Server Certificate=true
       - RabbitMQ__Host=${RABBITMQ_HOST}
       - RabbitMQ__Username=${RABBITMQ_USER}
       - RabbitMQ__Password=${RABBITMQ_PASSWORD}
@@ -97,7 +98,8 @@ services:
     ports:
       - "${PORT_AUTH}:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/sb_auth_db
+      # Aiven requires ?sslmode=require
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME_AUTH}?sslmode=${DB_SSL_MODE}
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
@@ -114,7 +116,7 @@ services:
     ports:
       - "${PORT_REPORTING}:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/sb_reporting_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME_REPORTING}?sslmode=${DB_SSL_MODE}
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
@@ -130,24 +132,13 @@ services:
   sb-agent:
     build: .
     container_name: sb-agent-service
-
-    # IMPORTANTE 1: Permisos y Red
     cap_add:
       - NET_ADMIN
       - NET_RAW
       - SYS_ADMIN
-
-    # 🚨 AÑADIDO: Otorga permisos amplios para control de bajo nivel del Host
     privileged: true
-
-    # 🚨 AÑADIDO: Permite que el contenedor vea y acceda a los PIDs del Host.
-    # Esto es crítico para que 'shutdown' funcione contra el sistema init del Host.
     pid: host
-
-    # IMPORTANTE 2: Networking
     network_mode: host
-
-    # IMPORTANTE 3: Persistencia de datos
     volumes:
       - agent_data:/sb-agent/data
       - /etc/localtime:/etc/localtime:ro

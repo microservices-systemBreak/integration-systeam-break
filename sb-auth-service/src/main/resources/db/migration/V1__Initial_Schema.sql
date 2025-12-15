@@ -1,6 +1,8 @@
--- Table users [cite: 77]
+-- Ensure uuid generation function is available
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE users (
-                       id BINARY(16) NOT NULL,
+                       id UUID NOT NULL,
                        username VARCHAR(50) NOT NULL UNIQUE,
                        password VARCHAR(100) NOT NULL,
                        email VARCHAR(100) NOT NULL,
@@ -8,27 +10,24 @@ CREATE TABLE users (
                        PRIMARY KEY (id)
 );
 
--- Table roles [cite: 78]
 CREATE TABLE roles (
-                       id BIGINT NOT NULL AUTO_INCREMENT,
+                       id BIGSERIAL NOT NULL,
                        name VARCHAR(50) NOT NULL UNIQUE,
                        description VARCHAR(255),
                        PRIMARY KEY (id)
 );
 
--- Table user_roles (Many-to-Many) [cite: 79]
 CREATE TABLE user_roles (
-                            user_id BINARY(16) NOT NULL,
+                            user_id UUID NOT NULL,
                             role_id BIGINT NOT NULL,
                             PRIMARY KEY (user_id, role_id),
                             FOREIGN KEY (user_id) REFERENCES users(id),
                             FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
--- Table tokens_revoked [cite: 72]
 CREATE TABLE tokens_revoked (
-                                id BINARY(16) NOT NULL,
+                                id UUID NOT NULL,
                                 token VARCHAR(500) NOT NULL,
-                                revoked_at DATETIME NOT NULL,
+                                revoked_at TIMESTAMP NOT NULL,
                                 PRIMARY KEY (id)
 );

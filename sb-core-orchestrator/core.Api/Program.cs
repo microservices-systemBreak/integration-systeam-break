@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using core.Application.Interfaces;
 using core.Infrastructure.Data;
 using core.Infrastructure.Clients;
@@ -41,6 +42,14 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<CoreDbContext>();
 
 var app = builder.Build();
+
+// Ensure database is created in DEV (fast path for integration environment)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+    // Create database and schema if they do not exist. This is acceptable in DEV where data persistence is not required.
+    db.Database.EnsureCreated();
+}
 
 // Configure the HTTP request pipeline
 // Configure the HTTP request pipeline

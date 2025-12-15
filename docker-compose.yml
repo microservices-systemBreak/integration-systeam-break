@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - sb_postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -121,11 +121,11 @@ services:
 
   sb-api-gateway:
     build:
-      context: .
-      dockerfile: sb-api-gateway/Dockerfile
+      context: ./sb-api-gateway
+      dockerfile: Dockerfile
     container_name: sb_api_gateway
     ports:
-      - "8000:8080"
+      - "8000:8000"
     depends_on:
       - sb-auth-service
       - sb-core-orchestrator

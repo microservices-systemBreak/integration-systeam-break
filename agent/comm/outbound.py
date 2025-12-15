@@ -77,3 +77,29 @@ def send_full_inventory():
         logger.error(f"Inventory send failed: Connection error: {e}")
     except Exception as e:
         logger.critical(f"Inventory send failed due to unexpected error: {e}")
+
+
+def notify_orchestrator_of_attack(attack_type, source_ip):
+    """
+    Notifies the main C# orchestrator about a detected security threat.
+    """
+    logger.warning(f"Notifying C# orchestrator of attack: {attack_type} from {source_ip}")
+
+    payload = get_base_payload()
+    payload["type"] = "security_alert"
+    payload["alert"] = {
+        "attack_type": attack_type,
+        "source_ip": source_ip
+    }
+
+    try:
+        # La URL debe apuntar a un nuevo endpoint en tu orquestador de C#
+        # Ejemplo: ORCHESTRATOR_URL = "http://<IP_ORQUESTADOR>/api/security"
+        alert_url = f"{ORCHESTRATOR_URL}/security/threat"
+        
+        # Envías los detalles del ataque al orquestador
+        requests.post(alert_url, json=payload, timeout=TIMEOUT_SECONDS)
+        
+        logger.info("Orchestrator notified successfully.")
+    except Exception as e:
+        logger.error(f"Failed to notify orchestrator: {e}")

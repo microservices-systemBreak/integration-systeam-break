@@ -2,13 +2,13 @@ import uvicorn
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 import logging
 from datetime import datetime, timezone 
-
-# --- Importaciones del agente ---
+from agent.sysadmin.attack_control import run_syn_scan_remote, run_icmp_flood_remote
 from agent.config import AGENT_ID, PORT
 from agent.sysadmin.packages import list_installed_packages
 from agent.sysadmin.system_info import get_resources, get_mac_address
 from agent.sysadmin.executor import shutdown # <-- IMPORTACIÓN DE LA FUNCIÓN DE APAGADO
-from agent.sysadmin.executor import update_system, show_video
+from agent.sysadmin.executor import update_system
+from pydantic import BaseModel
 
 logger = logging.getLogger("agent.api")
 
@@ -100,6 +100,32 @@ def update_agent_host(request: Request):
     except Exception as e:
         logger.error(f"Failed to execute update command: {e}")
         raise HTTPException(status_code=500, detail="Failed to initiate system update.")
+    
+# En api.py, define un nuevo Pydantic model (o usa dict simple) para la request
+
+
+class RemoteScanRequest(BaseModel):
+    target_ip: str
+    port_range: str
+
+# ---
+
+# En la sección de rutas (router) en api.py, añade:
+@router.post("/attacks/scan/syn", tags=["Attack Simulator Proxy"])
+def remote_syn_scan(request: RemoteScanRequest):
+    """
+    Actúa como proxy para el sb-attack-simulator. 
+    Solicita un escaneo SYN remoto.
+    """
+    try:
+        results = run_syn_scan_remote(request.target_ip, request.port_range)
+        # Devuelve directamente la respuesta del simulador
+        if "error" in results:
+            raise HTTPException(status_code=503, detail=results)
+        return results
+    except Exception as e:
+        logger.error(f"Error proxing SYN scan request: {e}")
+        raise HTTPException(status_code=500, detail=f"Agent failed to proxy request: {e}")
 
 
 # Incluye todas las rutas definidas en el router en la aplicación principal

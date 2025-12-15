@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { ROOMS, DeviceStatus } from "@/src/config/inventory";
+import { ROOMS, DeviceStatus,  getDevicesByRoom, RoomId, } from "@/src/config/inventory";
 
 export default function RoomDetailPage() {
   const params = useParams<{ roomId: string }>();
-  const roomId = params.roomId;
+  const roomId = params.roomId as RoomId;
 
   const room = ROOMS.find((r) => r.id === roomId);
 
@@ -15,7 +15,7 @@ export default function RoomDetailPage() {
 
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
-  const devices = room?.devices ?? [];
+   const devices = useMemo(() => getDevicesByRoom(roomId), [roomId]);
 
   const filtered = useMemo(() => {
     return devices.filter((d) => {
@@ -23,7 +23,8 @@ export default function RoomDetailPage() {
         d.id.toLowerCase().includes(query.toLowerCase()) ||
         d.name.toLowerCase().includes(query.toLowerCase());
 
-      const matchesStatus = statusFilter === "ALL" ? true : d.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "ALL" ? true : d.status === statusFilter;
 
       return matchesQuery && matchesStatus;
     });

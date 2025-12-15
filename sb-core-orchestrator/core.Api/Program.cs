@@ -43,10 +43,18 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+<<<<<<< HEAD
 // Configure the HTTP request pipeline
 // Enable Swagger in all environments for testing purposes
 app.UseSwagger();
 app.UseSwaggerUI();
+=======
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+>>>>>>> origin/feature/core-orchestrator
 
 // Global Exception Handler
 app.UseExceptionHandler(errorApp =>

@@ -1,0 +1,23 @@
+spring.application.name=SBAuthService
+
+server.port=8083
+
+# Database Configuration (PostgreSQL)
+spring.datasource.url=jdbc:postgresql://postgres:5432/sb_auth_db
+spring.datasource.username=postgres
+spring.datasource.password=password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# Flyway
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+
+# JWT Configuration
+jwt.secret=3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeThW
+jwt.expiration-ms=86400000
+jwt.refresh-expiration-ms=604800000
+
+logging.level.root=INFO

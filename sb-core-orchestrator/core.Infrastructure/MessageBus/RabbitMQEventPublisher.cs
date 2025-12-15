@@ -39,9 +39,9 @@ public class RabbitMqEventPublisher : IEventPublisher, IDisposable
             _channel = _connection.CreateModel();
 
             // Declare queues to ensure they exist
-            _channel.QueueDeclare(queue: "events.scans.completed", durable: true, exclusive: false, autoDelete: false, arguments: null);
-            _channel.QueueDeclare(queue: "events.commands.executed", durable: true, exclusive: false, autoDelete: false, arguments: null);
-            _channel.QueueDeclare(queue: "events.errors", durable: true, exclusive: false, autoDelete: false, arguments: null);
+            _channel.QueueDeclare(queue: "scan_completed_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+            _channel.QueueDeclare(queue: "command_executed_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+            _channel.QueueDeclare(queue: "error_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
             
             _logger.LogInformation("Successfully connected to RabbitMQ");
         }
@@ -54,12 +54,12 @@ public class RabbitMqEventPublisher : IEventPublisher, IDisposable
 
     public Task PublishScanCompletedAsync(ScanCompletedEvent scanEvent)
     {
-        return PublishEventAsync("events.scans.completed", scanEvent);
+        return PublishEventAsync("scan_completed_queue", scanEvent);
     }
 
     public Task PublishCommandExecutedAsync(CommandExecutedEvent commandEvent)
     {
-        return PublishEventAsync("events.commands.executed", commandEvent);
+        return PublishEventAsync("command_executed_queue", commandEvent);
     }
 
     public Task PublishErrorAsync(ErrorEvent errorEvent)

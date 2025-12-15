@@ -15,9 +15,14 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
       - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
   # --- C# Services ---
   core-orchestrator:
@@ -27,30 +32,34 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_core_db;Username=postgres;Password=password
       - RabbitMQ__Host=rabbitmq
+      - Services__VulnAnalyzer=http://vuln-analyzer:8080
     depends_on:
       - postgres
       - rabbitmq
 
   vuln-analyzer:
     build:
-      context: .
-      dockerfile: sb-vuln-analyzer/Dockerfile
+      context: ./sb-vuln-analyzer
+      dockerfile: Dockerfile
     ports:
       - "8081:8080"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_vuln_db;Username=postgres;Password=password
     depends_on:
       - postgres
 
   error-monitor:
     build:
-      context: .
-      dockerfile: sb-error-monitor/Dockerfile
+      context: ./sb-error-monitor
+      dockerfile: Dockerfile
     ports:
       - "8082:8080"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_error_db;Username=postgres;Password=password
       - RabbitMQ__Host=rabbitmq
     depends_on:
@@ -116,3 +125,4 @@ services:
 
 volumes:
   sb_postgres_data_new:
+  rabbitmq_data:

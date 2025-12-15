@@ -1,5 +1,6 @@
 import "./globals.css";
 import Providers from "./providers";
+import { ToastContainer } from "react-toastify";
 
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -8,9 +9,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   <html lang="es">
       <body>
 
-  <Providers>{children}</Providers>
+  <Providers>{children}</Providers >
+  <ToastContainer />
 
       </body>
+
   </html>
  
   );

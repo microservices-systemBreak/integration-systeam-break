@@ -23,7 +23,7 @@ export default function RoomsPage() {
           >
             <div style={{ fontWeight: 800 }}>{room.name}</div>
             <div style={{ opacity: 0.7, marginTop: 4 }}>
-              PCs: {room.devices.length}
+              Room ID: {room.id}
             </div>
           </Link>
         ))}

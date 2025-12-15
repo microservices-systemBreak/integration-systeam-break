@@ -1,6 +1,6 @@
 version: '3.8'
 
-services:
+services:  
   # 1. Base de datos MySQL para sb-auth-service
   auth_db:
     image: mysql:8.0
@@ -23,6 +23,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - system-break-net
 
   # 2. Microservicio de Autenticación (system-break-auth:1.0.0)
   auth_service:
@@ -43,6 +45,13 @@ services:
       # Asegura que la BD esté saludable antes de iniciar la aplicación
       auth_db:
         condition: service_healthy
+    networks:
+      - system-break-net
 
 volumes:
   auth_db_data:
+
+# Red compartida para todos los microservicios del sistema
+networks:
+  system-break-net:
+    driver: bridge

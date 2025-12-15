@@ -1,69 +1,144 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  # --- Infraestructura Base ---
   postgres:
-    image: postgres:17
+    image: postgres:16
+    container_name: sb_postgres
     environment:
-      POSTGRES_DB: system_break
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - sb_postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - system-break-net
 
   rabbitmq:
     image: rabbitmq:3-management
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+    container_name: sb_rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - sb_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - system-break-net
 
-  core-orchestrator:
+  # --- C# Services ---
+  sb-core-orchestrator:
     build:
-      context: ./sb-core-orchestrator
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: sb-core-orchestrator/Dockerfile
+    container_name: sb_core_orchestrator
     ports:
-      - "8080:8080"
+      - "5001:5001"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_core_db;Username=postgres;Password=password
       - RabbitMQ__Host=rabbitmq
-      - Services__VulnAnalyzer=http://vuln-analyzer:8080
     depends_on:
       - postgres
       - rabbitmq
+    networks:
+      - system-break-net
 
-  vuln-analyzer:
+  sb-vuln-analyzer:
     build:
-      context: ./sb-vuln-analyzer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: sb-vuln-analyzer/Dockerfile
+    container_name: sb_vuln_analyzer
     ports:
-      - "8081:8080"
+      - "5002:5002"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5002
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_vuln_db;Username=postgres;Password=password
     depends_on:
       - postgres
+    networks:
+      - system-break-net
 
-  error-monitor:
+  sb-error-monitor:
     build:
-      context: ./sb-error-monitor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: sb-error-monitor/Dockerfile
+    container_name: sb_error_monitor
     ports:
-      - "8082:8080"
+      - "5003:5003"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5003
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_error_db;Username=postgres;Password=password
       - RabbitMQ__Host=rabbitmq
     depends_on:
       - postgres
       - rabbitmq
+    networks:
+      - system-break-net
+
+  # --- Java Services ---
+  sb-auth-service:
+    build:
+      context: .
+      dockerfile: sb-auth-service/Dockerfile
+    container_name: sb_auth_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_auth_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - JWT_SECRET=3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeThW
+      - JWT_EXPIRATION_MS=86400000
+      - JWT_REFRESH_EXPIRATION_MS=604800000
+    depends_on:
+      - postgres
+    networks:
+      - system-break-net
+
+  sb-reporting-service:
+    build:
+      context: .
+      dockerfile: sb-reporting-service/Dockerfile
+    container_name: sb_reporting_service
+    ports:
+      - "8084:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_reporting_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - system-break-net
+
+  sb-api-gateway:
+    build:
+      context: ./sb-api-gateway
+      dockerfile: Dockerfile
+    container_name: sb_api_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - sb-auth-service
+      - sb-core-orchestrator
+      - sb-reporting-service
+      - sb-vuln-analyzer
+      - sb-error-monitor
+    networks:
+      - system-break-net
 
 volumes:
-  postgres_data:
-  rabbitmq_data:
+  sb_postgres_data:
+  sb_rabbitmq_data:
+
+networks:
+  system-break-net:
+    driver: bridge

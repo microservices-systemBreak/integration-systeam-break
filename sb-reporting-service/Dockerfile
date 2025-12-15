@@ -5,18 +5,19 @@ FROM eclipse-temurin:21-jdk-jammy AS builder
 WORKDIR /app
 
 # Copy the Maven wrapper files to make sure we use the project's Maven version
-COPY mvnw .
-COPY .mvn .mvn
+# Copy the Maven wrapper files to make sure we use the project's Maven version
+COPY sb-reporting-service/mvnw .
+COPY sb-reporting-service/.mvn .mvn
 
 # Copy the pom.xml file first to download dependencies
 # This leverages Docker's layer caching for faster builds if pom.xml doesn't change
-COPY pom.xml .
+COPY sb-reporting-service/pom.xml .
 
 # Download dependencies (this step will be cached if pom.xml doesn't change)
 RUN ./mvnw dependency:go-offline -B
 
 # Copy the rest of the source code
-COPY src src
+COPY sb-reporting-service/src src
 
 # Build the Spring Boot application
 RUN ./mvnw clean install -DskipTests

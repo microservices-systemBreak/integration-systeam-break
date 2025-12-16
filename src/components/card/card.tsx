@@ -1,69 +1,116 @@
 import React from "react";
-
-// Definimos los colores para cada estado
-const statusStyles: Record<string, React.CSSProperties> = {
-  online: { backgroundColor: "#e6f4ea", color: "#0b8043" },  // Verde claro
-  offline: { backgroundColor: "#f1f3f4", color: "#5f6368" }, // Gris claro
-  error: { backgroundColor: "#fdecea", color: "#c5221f" },   // Rojo claro
-};
+import Link from "next/link";
 
 interface CardProps {
-  title: string;
-  content: string;
   id: string;
-  status: "online" | "offline" | "error";
+  title: string;
+  subtitle?: string;
+  children?: React.ReactNode;
+  status?: "online" | "offline" | "error" | "warning";
   extraInfo?: string;
   onClick?: () => void;
+  href?: string;
+  className?: string;
 }
 
 const Card: React.FC<CardProps> = ({
+  id,
   title,
-  content,
+  subtitle,
+  children,
   status,
   extraInfo,
   onClick,
+  href,
+  className = "",
 }) => {
+  // Mapeo de estados para badges y colores
+  const statusConfig = {
+    online: {
+      label: "Online",
+      dotColor: "bg-emerald-400",
+      dotGlow: "shadow-[0_0_12px_rgba(52,211,153,0.9)]",
+      textColor: "text-emerald-400",
+    },
+    offline: {
+      label: "Offline",
+      dotColor: "bg-gray-400",
+      dotGlow: "shadow-[0_0_12px_rgba(156,163,175,0.5)]",
+      textColor: "text-gray-400",
+    },
+    error: {
+      label: "Error",
+      dotColor: "bg-red-400",
+      dotGlow: "shadow-[0_0_12px_rgba(248,113,113,0.9)]",
+      textColor: "text-red-400",
+    },
+    warning: {
+      label: "Warning",
+      dotColor: "bg-yellow-400",
+      dotGlow: "shadow-[0_0_12px_rgba(250,204,21,0.9)]",
+      textColor: "text-yellow-400",
+    },
+  };
+
+  // Clases base del estilo de rooms
+  const baseClasses = `group relative overflow-hidden rounded-2xl border border-white/5 
+                       bg-slate-900/70 p-5 backdrop-blur-md transition 
+                       hover:-translate-y-1 hover:border-fuchsia-400/80 hover:bg-slate-900/95
+                       ${onClick || href ? "cursor-pointer" : ""} ${className}`;
+
+  // Contenido interno de la card
+  const cardContent = (
+    <>
+      {/* Glow de color al hacer hover (estilo rooms) */}
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-emerald-400/20" />
+      </div>
+
+      {/* Contenido */}
+      <div className="relative flex flex-col gap-2">
+        {/* Subtitle con status dot (si existe status o subtitle) */}
+        {(subtitle || status) && (
+          <div className="inline-flex items-center gap-2 text-[11px] text-fuchsia-300">
+            {status && (
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${statusConfig[status].dotColor} ${statusConfig[status].dotGlow}`}
+              />
+            )}
+            {subtitle || (status && statusConfig[status].label)}
+          </div>
+        )}
+
+        {/* Title */}
+        <h2 className="text-lg font-semibold">{title}</h2>
+
+        {/* Children o contenido custom */}
+        {children ? (
+          children
+        ) : (
+          <>
+            {/* ExtraInfo si no hay children */}
+            {extraInfo && (
+              <p className="text-xs text-slate-400">{extraInfo}</p>
+            )}
+          </>
+        )}
+      </div>
+    </>
+  );
+
+  // Si tiene href, usar Link
+  if (href) {
+    return (
+      <Link href={href} className={baseClasses} id={id}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  // Si tiene onClick o no tiene navegación, usar div
   return (
-    <div
-      onClick={onClick}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        padding: 16,
-        background: "white",
-        borderRadius: 12,
-        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-        border: "1px solid #eee",
-        cursor: "pointer",
-        transition: "transform 0.3s ease, background-color 0.3s",  // Transición suave
-        backgroundColor: "#2c2c2c",  // Fondo oscuro para mayor contraste
-      }}
-      className="hover:scale-105 hover:bg-slate-900/90 transition duration-200"
-    >
-      <div style={{ fontWeight: 800, fontSize: "16px", color: "#f3f3f3" }}>
-        {title}
-      </div>
-      <div style={{ opacity: 0.8, fontSize: "14px", color: "#ddd" }}>
-        {content}
-      </div>
-      {extraInfo && (
-        <div style={{ fontSize: 12, opacity: 0.75, color: "#aaa" }}>
-          {extraInfo}
-        </div>
-      )}
-      <div
-        style={{
-          padding: "4px 8px",
-          borderRadius: 999,
-          fontSize: 11,
-          fontWeight: 700,
-          ...statusStyles[status],
-          marginTop: 8,
-        }}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </div>
+    <div onClick={onClick} className={baseClasses} id={id}>
+      {cardContent}
     </div>
   );
 };

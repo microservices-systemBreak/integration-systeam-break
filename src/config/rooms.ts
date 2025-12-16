@@ -2,7 +2,7 @@
 import type { RoomId } from "./devices";
 
 export type Room = {
-  devices: any;
+  devices?: any;
   id: RoomId;
   name: string;
 };

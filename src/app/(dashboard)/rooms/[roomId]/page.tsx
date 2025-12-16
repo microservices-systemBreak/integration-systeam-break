@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ROOMS, DeviceStatus,  getDevicesByRoom, RoomId, } from "@/src/config/inventory";
+import Card from "@/src/components/card/card";
 
 export default function RoomDetailPage() {
   const params = useParams<{ roomId: string }>();
@@ -96,39 +97,39 @@ export default function RoomDetailPage() {
       </div>
 
       {/* Lista de PCs */}
-      <div style={{ display: "grid", gap: 10, marginTop: 16, maxWidth: 700 }}>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
         {filtered.map((d) => (
-          <div
+          <Card
             key={d.id}
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 14,
-              padding: 14,
-              background: "white",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-            }}
+            id={d.id}
+            title={d.name}
+            subtitle={`PC #${d.pcNumber ?? "?"}`}
+            status={d.status.toLowerCase() as "online" | "offline" | "error"}
+            onClick={() => toggleOne(d.id)}
           >
-            <div>
-              <div style={{ fontWeight: 800 }}>{d.name}</div>
-              <div style={{ opacity: 0.7, fontSize: 13 }}>
-                ID: {d.id} • Estado: {d.status}
-              </div>
+            <p className="text-xs text-slate-300">
+              ID: <span className="font-mono text-fuchsia-200">{d.id}</span>
+            </p>
+            <p className="text-xs text-slate-400">
+              Estado: {d.status}
+            </p>
+            <div className="mt-2 flex justify-end">
+              <input
+                type="checkbox"
+                checked={!!selected[d.id]}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  toggleOne(d.id);
+                }}
+                className="w-4 h-4 rounded border-gray-400 text-fuchsia-600 focus:ring-fuchsia-500"
+                onClick={(e) => e.stopPropagation()}
+              />
             </div>
-
-            <input
-              type="checkbox"
-              checked={!!selected[d.id]}
-              onChange={() => toggleOne(d.id)}
-              style={{ width: 18, height: 18 }}
-            />
-          </div>
+          </Card>
         ))}
 
         {filtered.length === 0 && (
-          <div style={{ opacity: 0.7 }}>No hay resultados con esos filtros.</div>
+          <div className="text-slate-400">No hay resultados con esos filtros.</div>
         )}
       </div>
     </div>

@@ -1,8 +1,8 @@
 // src/app/(dashboard)/rooms/page.tsx
 "use client";
 
-import Link from "next/link";
 import { ROOMS } from "@/src/config/inventory";
+import Card from "@/src/components/card/card";
 
 export default function RoomsPage() {
   const totalDevices = ROOMS.reduce(
@@ -14,6 +14,7 @@ export default function RoomsPage() {
     <div className="relative min-h-screen bg-[#05020b] text-slate-50 overflow-hidden">
       {/* FONDO SPLINE, GRANDE */}
       <div className="pointer-events-none absolute inset-0 opacity-45">
+        {/* @ts-ignore: Web Component de Spline */}
         <spline-viewer
           url="https://prod.spline.design/NEQBXr1i0Otgs9Nn/scene.splinecode"
           className="h-full w-full"
@@ -55,41 +56,26 @@ export default function RoomsPage() {
         {/* Cards de salas */}
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {ROOMS.map((room) => (
-            <Link
+            <Card
               key={room.id}
+              id={room.id}
               href={`/rooms/${room.id}`}
-              className="group relative overflow-hidden rounded-2xl border border-white/5 
-                         bg-slate-900/70 p-5 backdrop-blur-md transition 
-                         hover:-translate-y-1 hover:border-fuchsia-400/80 hover:bg-slate-900/95"
+              title={room.name}
+              subtitle={`Sala #${room.id}`}
+              status="online"
             >
-              {/* Glow de color al hacer hover */}
-              <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
-                <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-emerald-400/20" />
-              </div>
-
-              {/* Contenido */}
-              <div className="relative flex flex-col gap-2">
-                <div className="inline-flex items-center gap-2 text-[11px] text-fuchsia-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
-                  Sala #{room.id}
-                </div>
-
-                <h2 className="text-lg font-semibold">{room.name}</h2>
-
-                <p className="text-xs text-slate-300">
-                  Room ID:{" "}
-                  <span className="font-mono text-fuchsia-200">
-                    {room.id}
-                  </span>
-                </p>
-
-                <p className="text-xs text-slate-400">
-                  {room.devices?.length
-                    ? `${room.devices.length} equipos registrados`
-                    : "Sin equipos registrados (demo)"}
-                </p>
-              </div>
-            </Link>
+              <p className="text-xs text-slate-300">
+                Room ID:{" "}
+                <span className="font-mono text-fuchsia-200">
+                  {room.id}
+                </span>
+              </p>
+              <p className="text-xs text-slate-400">
+                {room.devices?.length
+                  ? `${room.devices.length} equipos registrados`
+                  : "Sin equipos registrados (demo)"}
+              </p>
+            </Card>
           ))}
         </section>
       </div>

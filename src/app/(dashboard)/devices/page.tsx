@@ -89,6 +89,7 @@ export default function DevicesPage() {
     <div className="relative min-h-screen bg-black text-white overflow-hidden">
       {/* Fondo con Spline */}
       <div className="pointer-events-none absolute inset-0 opacity-45">
+        {/* @ts-ignore: Web Component de Spline */}
         <spline-viewer
           url="https://prod.spline.design/NEQBXr1i0Otgs9Nn/scene.splinecode"
           className="h-full w-full"
@@ -158,17 +159,38 @@ export default function DevicesPage() {
 
         {/* Lista de PCs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filtered.map((d) => (
-            <Card
-              key={d.id}
-              id={d.id}  // Aquí agregamos el ID que falta
-              title={d.name}
-              content={`ID: ${d.id}`}
-              status={d.status.toLowerCase() as "online" | "offline" | "error"}
-              extraInfo={`Sala: ${d.roomName ?? d.roomId} • PC #${d.pcNumber ?? "?"}`}
-              onClick={() => toggleOne(d.id)} // Función de clic para seleccionar
-            />
-          ))}
+          {filtered.map((d) => {
+            const isSelected = !!selected[d.id];
+            return (
+              <Card
+                key={d.id}
+                id={d.id}
+                title={d.name}
+                subtitle={`ID: ${d.id}`}
+                status={d.status.toLowerCase() as "online" | "offline" | "error"}
+                onClick={() => toggleOne(d.id)}
+              >
+                <div className="flex justify-between items-center gap-2">
+                  <p className="text-xs text-slate-400 flex-1">
+                    Sala: {d.roomName ?? d.roomId} • PC #{d.pcNumber ?? "?"}
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOne(d.id);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+                      isSelected
+                        ? "bg-fuchsia-600 text-white hover:bg-fuchsia-500"
+                        : "bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600"
+                    }`}
+                  >
+                    {isSelected ? "Seleccionado" : "Seleccionar"}
+                  </button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </main>
     </div>

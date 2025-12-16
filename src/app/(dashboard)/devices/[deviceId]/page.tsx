@@ -19,13 +19,13 @@ export default function DevicesPage() {
     setLoading(true);
 
     const results = await Promise.all(
-      DEVICES.map(async (deviceId) => {
+      DEVICES.map(async (device) => {
         try {
-          const data = await getLatestPackages(deviceId);
-          return { deviceId, ok: true, data } as const;
+          const data = await getLatestPackages(device.id);
+          return { deviceId: device.id, ok: true, data } as const;
         } catch (e: any) {
           return {
-            deviceId,
+            deviceId: device.id,
             ok: false,
             error: e?.message ?? "Request failed",
           } as const;

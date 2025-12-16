@@ -18,7 +18,7 @@
 
 import threading
 import uvicorn
-from agent.core import start_agent_tasks  # Asumo que tienes una función así
+from agent.core import start as start_agent_tasks  # Importamos 'start' como 'start_agent_tasks'
 # Importamos la app FastAPI del nuevo módulo de simulación
 from agent.simulation_server.server import app as simulation_app
 

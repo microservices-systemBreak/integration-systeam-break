@@ -6,6 +6,12 @@ spring:
     name: sb-api-gateway
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods: "*"
+            allowedHeaders: "*"
       routes:
         # Regla para enrutar al servicio de reportes
         - id: reporting-service-route

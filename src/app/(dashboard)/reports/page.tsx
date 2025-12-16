@@ -53,6 +53,7 @@ export default function ReportsPage() {
     <div className="relative min-h-screen bg-black text-white">
       {/* Fondo Spline */}
       <div className="absolute inset-0 pointer-events-none opacity-50">
+        {/* @ts-ignore: Web Component de Spline */}
         <spline-viewer
           url="https://prod.spline.design/ffn2PNe9fYpcO7yA/scene.splinecode"
           className="h-full w-full"

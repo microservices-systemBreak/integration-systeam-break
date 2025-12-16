@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/incidents", label: "Incidentes" },
   { href: "/reports", label: "Reportes" },
   { href: "/attacker", label: "Attacker" },
+  { href: "/chat-ia", label: "Chat IA" },
 ];
 
 export default function Sidebar() {

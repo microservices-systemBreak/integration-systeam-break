@@ -9,6 +9,7 @@ import {
   IncidentType,
   DEVICES,
 } from "@/src/config/inventory";
+import Card from "@/src/components/card/card";
 
 type SeverityFilter = "ALL" | IncidentSeverity;
 type TypeFilter = "ALL" | IncidentType;
@@ -100,10 +101,25 @@ export default function IncidentsPage() {
       timeStyle: "short",
     });
 
+  // Mapear severity a status del Card
+  const severityToStatus = (severity: IncidentSeverity): "online" | "offline" | "error" | "warning" => {
+    switch (severity) {
+      case "CRITICAL":
+        return "error";
+      case "HIGH":
+        return "warning";
+      case "MEDIUM":
+      case "LOW":
+      default:
+        return "online";
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-black text-white">
       {/* Fondo spline */}
       <div className="absolute inset-0 pointer-events-none opacity-50">
+        {/* @ts-ignore: Web Component de Spline */}
         <spline-viewer
           url="https://prod.spline.design/ffn2PNe9fYpcO7yA/scene.splinecode"
           className="h-full w-full"
@@ -177,77 +193,35 @@ export default function IncidentsPage() {
         </div>
 
         {/* Lista de incidentes */}
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            marginTop: 18,
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          }}
-        >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
           {filtered.map((inc) => (
-            <div
+            <Card
               key={inc.id}
-              style={{
-                border: "1px solid #eee",
-                borderRadius: 14,
-                padding: 14,
-                background: "white",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
+              id={String(inc.id)}
+              title={inc.deviceName ?? inc.deviceId}
+              subtitle={`Sala: ${inc.roomName ?? "Desconocida"}${inc.pcNumber ? ` • PC #${inc.pcNumber}` : ""}`}
+              status={severityToStatus(inc.severity)}
             >
-              {/* Cabecera PC + sala */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 800 }}>
-                    {inc.deviceName ?? inc.deviceId}
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    Sala: <strong>{inc.roomName ?? "Desconocida"}</strong>
-                    {inc.pcNumber && (
-                      <>
-                        {" "}
-                        • PC #<strong>{inc.pcNumber}</strong>
-                      </>
-                    )}
-                  </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <span style={typeStyle(inc.type)} className="inline-block">
+                    {inc.type}
+                  </span>
+                  <span style={severityStyle(inc.severity)} className="inline-block">
+                    {inc.severity}
+                  </span>
                 </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={typeStyle(inc.type)}>{inc.type}</span>
-                  <span style={severityStyle(inc.severity)}>{inc.severity}</span>
+                <p className="text-xs text-slate-300">{inc.description}</p>
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>ID: {inc.id}</span>
+                  <span>{formatDateTime(inc.detectedAt)}</span>
                 </div>
               </div>
-
-              {/* Descripción */}
-              <div style={{ fontSize: 13 }}>{inc.description}</div>
-
-              {/* Fecha */}
-              <div
-                style={{
-                  fontSize: 11,
-                  opacity: 0.7,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 4,
-                }}
-              >
-                <span>ID incidente: {inc.id}</span>
-                <span>Detectado: {formatDateTime(inc.detectedAt)}</span>
-              </div>
-            </div>
+            </Card>
           ))}
 
           {filtered.length === 0 && (
-            <div style={{ opacity: 0.7 }}>
+            <div className="text-slate-400">
               No hay incidentes con esos filtros. Prueba limpiando la búsqueda.
             </div>
           )}

@@ -1,3 +1,4 @@
+
 # well, welcome to the project
 
 ## **specialized handling**
@@ -99,7 +100,7 @@ Response:
   "overallSeverity": "HIGH"
 }
 ````
-<<
+
 **Package Scan Flow**
 - Receives request from Java API Gateway
 - Registers job in database with status “PENDING”
@@ -508,3 +509,4 @@ dotnet test sb-vuln-analyzer/tests/UnitTests/vuln.UnitTests.csproj
   }
 }
 ````
+

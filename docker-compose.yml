@@ -1,144 +1,158 @@
-version: "3.8"
-
 services:
-  # --- Infraestructura Base ---
   postgres:
     image: postgres:16
-    container_name: sb_postgres
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: system_break
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5433:5432"
+      - "${DB_PORT}:5432"
     volumes:
-      - sb_postgres_data:/var/lib/postgresql/data
+      - sb_postgres_data_new:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - system-break-net
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: sb_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
-      - "5672:5672"
+      - "${RABBITMQ_PORT}:5672"
       - "15672:15672"
     volumes:
-      - sb_rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - system-break-net
+      - rabbitmq_data:/var/lib/rabbitmq
 
   # --- C# Services ---
-  sb-core-orchestrator:
+  core-orchestrator:
     build:
       context: .
       dockerfile: sb-core-orchestrator/Dockerfile
-    container_name: sb_core_orchestrator
     ports:
-      - "5001:5001"
+      - "${PORT_CORE}:8080"
     environment:
-      - ASPNETCORE_URLS=http://+:5001
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_core_db;Username=postgres;Password=password
-      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      # Aiven requires SSL. We map Ssl Mode to the env variable (Disable/Require)
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=${DB_NAME_CORE};Username=${DB_USER};Password=${DB_PASSWORD};Ssl Mode=${DB_SSL_MODE};Trust Server Certificate=true
+      - RabbitMQ__Host=${RABBITMQ_HOST}
+      - RabbitMQ__Username=${RABBITMQ_USER}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD}
+      - Services__VulnAnalyzer=http://vuln-analyzer:8080
     depends_on:
       - postgres
       - rabbitmq
-    networks:
-      - system-break-net
 
-  sb-vuln-analyzer:
+  vuln-analyzer:
     build:
       context: .
       dockerfile: sb-vuln-analyzer/Dockerfile
-    container_name: sb_vuln_analyzer
     ports:
-      - "5002:5002"
+      - "${PORT_VULN}:8080"
     environment:
-      - ASPNETCORE_URLS=http://+:5002
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_vuln_db;Username=postgres;Password=password
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=${DB_NAME_VULN};Username=${DB_USER};Password=${DB_PASSWORD};Ssl Mode=${DB_SSL_MODE};Trust Server Certificate=true
     depends_on:
       - postgres
-    networks:
-      - system-break-net
 
-  sb-error-monitor:
+  error-monitor:
     build:
       context: .
       dockerfile: sb-error-monitor/Dockerfile
-    container_name: sb_error_monitor
     ports:
-      - "5003:5003"
+      - "${PORT_ERROR}:8080"
     environment:
-      - ASPNETCORE_URLS=http://+:5003
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sb_error_db;Username=postgres;Password=password
-      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Database=${DB_NAME_ERROR};Username=${DB_USER};Password=${DB_PASSWORD};Ssl Mode=${DB_SSL_MODE};Trust Server Certificate=true
+      - RabbitMQ__Host=${RABBITMQ_HOST}
+      - RabbitMQ__Username=${RABBITMQ_USER}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD}
     depends_on:
       - postgres
       - rabbitmq
-    networks:
-      - system-break-net
 
   # --- Java Services ---
-  sb-auth-service:
+  sb-api-gateway:
     build:
       context: .
-      dockerfile: sb-auth-service/Dockerfile
-    container_name: sb_auth_service
+      dockerfile: sb-api-gateway/Dockerfile
+    ports:
+      - "${PORT_GATEWAY}:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_auth_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SERVER_PORT=8080
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://sb-auth-service:8080
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0=Path=/auth/**
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_URI=http://core-orchestrator:8080
+      - SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0=Path=/core/requests/**
+      - SPRING_CLOUD_GATEWAY_ROUTES_2_URI=http://sb-reporting-service:8084
+      - SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0=Path=/reports/**
+    depends_on:
+      - sb-auth-service
+      - core-orchestrator
+      - sb-reporting-service
+
+  sb-auth-service:
+    build:
+      context: ./sb-auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT_AUTH}:8080"
+    environment:
+      # Aiven requires ?sslmode=require
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME_AUTH}?sslmode=${DB_SSL_MODE}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - JWT_SECRET=3t6w9z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeThW
-      - JWT_EXPIRATION_MS=86400000
-      - JWT_REFRESH_EXPIRATION_MS=604800000
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_MS=${JWT_EXPIRATION_MS}
+      - JWT_REFRESH_EXPIRATION_MS=${JWT_REFRESH_EXPIRATION_MS}
     depends_on:
       - postgres
-    networks:
-      - system-break-net
 
   sb-reporting-service:
     build:
       context: .
       dockerfile: sb-reporting-service/Dockerfile
-    container_name: sb_reporting_service
     ports:
-      - "8084:8080"
+      - "${PORT_REPORTING}:8084"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sb_reporting_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME_REPORTING}?sslmode=${DB_SSL_MODE}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - SPRING_RABBITMQ_USERNAME=guest
-      - SPRING_RABBITMQ_PASSWORD=guest
+      - SERVER_PORT=8084
+      - SPRING_RABBITMQ_HOST=${RABBITMQ_HOST}
+      - SPRING_RABBITMQ_PORT=${RABBITMQ_PORT}
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     depends_on:
       - postgres
       - rabbitmq
-    networks:
-      - system-break-net
 
-  sb-api-gateway:
+  sb-agent:
+    build: .
+    container_name: sb-agent-service
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_ADMIN
+    privileged: true
+    pid: host
+    network_mode: host
+    volumes:
+      - agent_data:/sb-agent/data
+      - /etc/localtime:/etc/localtime:ro
+
+  sb-frontend:
     build:
-      context: ./sb-api-gateway
+      context: ./sb-frontend
       dockerfile: Dockerfile
-    container_name: sb_api_gateway
     ports:
-      - "8000:8000"
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
     depends_on:
-      - sb-auth-service
-      - sb-core-orchestrator
-      - sb-reporting-service
-      - sb-vuln-analyzer
-      - sb-error-monitor
-    networks:
-      - system-break-net
+      - sb-api-gateway
 
 volumes:
-  sb_postgres_data:
-  sb_rabbitmq_data:
-
-networks:
-  system-break-net:
-    driver: bridge
+  sb_postgres_data_new:
+  rabbitmq_data:
+  agent_data:

@@ -73,25 +73,7 @@ namespace error.Infrastructure.Services
                     var message = Encoding.UTF8.GetString(body);
                     _logger.LogInformation("Received error message: {Message}", message);
 
-                    var errorEvent = JsonSerializer.Deserialize<ErrorEvent>(message);
-                    if (errorEvent != null)
-                    {
-                        using (var scope = _scopeFactory.CreateScope())
-                        {
-                            var errorLogRepository = scope.ServiceProvider.GetRequiredService<IErrorLogRepository>();
-                            var errorLog = new ErrorLog(
-                                Guid.NewGuid(),
-                                errorEvent.Service,
-                                errorEvent.CorrelationId,
-                                errorEvent.Level,
-                                errorEvent.Message,
-                                errorEvent.Details?.ToString() ?? string.Empty,
-                                errorEvent.Timestamp
-                            );
-                            await errorLogRepository.AddAsync(errorLog);
-                            await errorLogRepository.SaveChangesAsync();
-                        }
-                    }
+                    await ProcessErrorEventAsync(message);
                     
                     // Acknowledge relevant message
                     _channel.BasicAck(ea.DeliveryTag, false);
@@ -107,6 +89,31 @@ namespace error.Infrastructure.Services
             _channel.BasicConsume(queue: "error_queue", autoAck: false, consumer: consumer);
             return Task.CompletedTask;
         }
+
+        public async Task ProcessErrorEventAsync(string message)
+        {
+            var errorEvent = JsonSerializer.Deserialize<ErrorEvent>(message);
+            if (errorEvent != null)
+            {
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var errorLogRepository = scope.ServiceProvider.GetRequiredService<IErrorLogRepository>();
+                    var errorLog = new ErrorLog(
+                        Guid.NewGuid(),
+                        errorEvent.Service,
+                        errorEvent.CorrelationId,
+                        errorEvent.Level,
+                        errorEvent.Message,
+                        errorEvent.Details?.ToString() ?? string.Empty,
+                        errorEvent.Timestamp
+                    );
+                    await errorLogRepository.AddAsync(errorLog);
+                    await errorLogRepository.SaveChangesAsync();
+                }
+            }
+        }
+
+
 
         public override void Dispose()
         {

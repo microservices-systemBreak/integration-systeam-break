@@ -50,8 +50,14 @@ public class JwtService {
     }
 
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+            System.out.println("Longitud de la clave decodificada (bytes): " + keyBytes.length);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            System.err.println("¡CRÍTICO! Error al decodificar la clave JWT: " + e.getMessage());
+            throw new RuntimeException("Error al cargar la clave JWT.", e);
+        }
     }
 
     public String generateToken(UserDetails userDetails) {

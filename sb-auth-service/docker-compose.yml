@@ -13,7 +13,7 @@ services:
       MYSQL_PASSWORD: dev_password
     ports:
       # Mapea el puerto de MySQL interno al 3306 del host (opcional, útil para herramientas externas)
-      - "3306:3306"
+      - "3307:3307"
     volumes:
       # Volumen persistente para los datos de la BD
       - auth_db_data:/var/lib/mysql
@@ -33,14 +33,23 @@ services:
     container_name: sb_auth_service_container
     ports:
       # Expone el puerto de la aplicación (8080 del contenedor al 8080 del host)
-      - "8080:8080"
+      - "8082:8082"
+      - "5005:5005"
     environment:
       # Variables de entorno para la conexión a la base de datos (Usadas en application.yml)
       AUTH_DB_HOST: auth_db # Nombre del servicio de la BD en Docker Compose (host interno)
       AUTH_DB_USER: user_dev
       AUTH_DB_PASSWORD: dev_password
+
       # Clave secreta para JWT (se obtiene del archivo .env)
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    command: >
+      java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n 
+      -jar /app/sb-auth-service.jar 
+      --logging.level.root=DEBUG
+      --logging.level.org.springframework.security=DEBUG
+      --logging.level.org.springframework.web=DEBUG
     depends_on:
       # Asegura que la BD esté saludable antes de iniciar la aplicación
       auth_db:

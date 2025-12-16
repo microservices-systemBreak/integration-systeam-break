@@ -1,3 +1,4 @@
+
 # well, welcome to the project
 
 ## **specialized handling**
@@ -414,35 +415,70 @@ services:
 
 ## 4. Build and Run Instructions
 
+# Integration System Break
+
+A microservices-based system integrating .NET, Java (Spring Boot), Python, and Next.js, orchestrated via Docker Compose.
+
+## 🚀 Services Overview
+
+| Service | Tech Stack | Port (Host) | Description |
+| :--- | :--- | :--- | :--- |
+| **sb-frontend** | Next.js (Node 20) | `3000` | User Dashboard |
+| **sb-api-gateway** | Spring Cloud Gateway | `8080` | Central entry point |
+| **sb-auth-service** | Spring Boot 3.2 | `8083`* | Authentication & JWT |
+| **sb-reporting-service** | Spring Boot 3.2 | `8084` | Reporting & Analytics |
+| **core-orchestrator** | .NET 9.0 | `5000` | Core Logic Orchestration |
+| **vuln-analyzer** | .NET 9.0 | `8081` | Vulnerability Analysis |
+| **error-monitor** | .NET 9.0 | `8082` | Error Monitoring |
+| **sb-agent** | Python 3.12 | - | Background Agent |
+
+*\*Mapped internally to 8080, exposed on 8083 or configured via env.*
+
+## 🛠️ Getting Started
+
 ### Prerequisites
-- .NET 9.0 SDK
-- Docker & Docker Compose
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [Git](https://git-scm.com/)
 
-### Local Build (Verified)
-The following commands have been verified to work locally:
-
+### 1. Environment Setup
+Review the `.env.example` file. You can create a `.env` file for local overrides (this file is git-ignored).
 ```bash
-# sb-core-orchestrator
-dotnet build sb-core-orchestrator/sb-core-orchestrator.sln
-
-# sb-vuln-analyzer
-dotnet build sb-vuln-analyzer/vuln.analyzer.sln
-
-# sb-error-monitor
-dotnet build sb-error-monitor/error.monitor.sln
+cp .env.example .env
 ```
 
-### Running with Docker
+### 2. Run with Docker Compose
+The entire system can be started with a single command.
 ```bash
 docker-compose up --build
 ```
+*Note: This builds all images and starts containers.*
 
-### Running Tests
-```bash
-dotnet test sb-vuln-analyzer/tests/UnitTests/vuln.UnitTests.csproj
-```
+### 3. Access the Application
+- **Frontend Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **API Gateway**: [http://localhost:8080](http://localhost:8080)
 
-## Acceptance Criteria v1.0
+## 🔧 Troubleshooting
+
+### Port Conflicts
+If you encounter port conflicts (e.g., "Bind for 0.0.0.0:8081 failed"):
+1. Check `.env` or `docker-compose.yml` for port mappings.
+2. Ensure no other services are running on ports 3000, 8080-8084, 5000.
+
+### Database Errors
+If you see "database files are incompatible with server":
+1. Stop containers: `docker-compose down`
+2. Remove the data volume: `docker volume rm integration_systembreack_postgres_data`
+3. Restart: `docker-compose up --build`
+
+## 📂 Project Structure
+- `sb-frontend/`: Next.js Web App
+- `sb-auth-service/`: Java Auth Service
+- `sb-api-gateway/`: Java API Gateway
+- `sb-reporting-service/`: Java Reporting Service
+- `sb-core-orchestrator/`: .NET Orchestrator
+- `sb-vuln-analyzer/`: .NET Analyzer
+- `sb-error-monitor/`: .NET Error Monitor
+- `sb-agent/`: Python Agent
 
 ### Minimum Viable Features
 
@@ -507,8 +543,5 @@ dotnet test sb-vuln-analyzer/tests/UnitTests/vuln.UnitTests.csproj
     }
   }
 }
-<<<<<<< HEAD
-``
-=======
 ````
->>>>>>> fix/api-gateway-cleanup
+

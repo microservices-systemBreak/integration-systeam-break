@@ -20,6 +20,10 @@ bld/
 *.log
 logs/
 *.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # Docker
 .env
@@ -27,7 +31,14 @@ logs/
 
 # Node.js
 node_modules/
-npm-debug.log*
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # NuGet
 **/[Pp]ackages/*
@@ -46,3 +57,18 @@ npm-debug.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.pem
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

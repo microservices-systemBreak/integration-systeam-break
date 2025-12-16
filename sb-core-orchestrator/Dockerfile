@@ -7,7 +7,6 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copy csproj files
-# Copy csproj files
 COPY ["sb-core-orchestrator/core.Api/core.Api.csproj", "sb-core-orchestrator/core.Api/"]
 COPY ["sb-core-orchestrator/core.Application/core.Application.csproj", "sb-core-orchestrator/core.Application/"]
 COPY ["sb-core-orchestrator/core.Domain/core.Domain.csproj", "sb-core-orchestrator/core.Domain/"]
